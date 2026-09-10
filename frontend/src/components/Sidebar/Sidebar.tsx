@@ -49,23 +49,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`relative flex flex-col h-full bg-canvas border-r border-hairline transition-all duration-200 ease-out overflow-hidden z-45 ${
+        className={`relative flex flex-col h-full bg-canvas dark:bg-canvas-deep border-r border-hairline dark:border-white/10 transition-all duration-200 ease-out overflow-hidden z-45 ${
           isOpen
             ? 'w-[280px] min-w-[280px]'
             : 'w-0 min-w-0 border-r-0'
         }`}
       >
         {/* Top Branding & Collapse button */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-hairline flex-shrink-0">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-hairline dark:border-white/10 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-ink text-on-primary flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-ink dark:bg-white text-on-primary dark:text-ink flex items-center justify-center flex-shrink-0">
               <Sprout size={18} strokeWidth={2.2} />
             </div>
             <div>
-              <div className="font-display text-xl font-medium tracking-tight leading-none text-ink">
+              <div className="font-display text-xl font-medium tracking-tight leading-none text-ink dark:text-on-dark">
                 {UI_STRINGS.BRAND_NAME}
               </div>
-              <div className="text-[10px] text-muted tracking-wider font-semibold uppercase mt-0.5">
+              <div className="text-[10px] text-muted dark:text-muted-soft tracking-wider font-semibold uppercase mt-0.5">
                 Agricultural VL System
               </div>
             </div>

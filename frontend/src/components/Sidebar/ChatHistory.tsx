@@ -81,15 +81,15 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                   onClick={() => !isEditing && onSelect(conv.id)}
                   className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 border ${
                     isActive
-                      ? 'bg-surface-card border-hairline shadow-subtle'
-                      : 'bg-transparent border-transparent hover:bg-canvas-soft'
+                      ? 'bg-surface-card dark:bg-surface-dark-elevated border-hairline dark:border-white/10 shadow-subtle'
+                      : 'bg-transparent border-transparent hover:bg-canvas-soft dark:hover:bg-white/5'
                   }`}
                 >
                   <MessageSquare
                     size={15}
                     strokeWidth={1.8}
                     className={`flex-shrink-0 ${
-                      isActive ? 'text-ink' : 'text-muted'
+                      isActive ? 'text-ink dark:text-on-dark' : 'text-muted dark:text-muted-soft'
                     }`}
                   />
 
@@ -103,7 +103,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         autoFocus
-                        className="flex-1 text-[13px] px-1.5 py-0.5 border border-hairline-strong rounded bg-surface-card text-ink outline-none"
+                        className="flex-1 text-[13px] px-1.5 py-0.5 border border-hairline-strong dark:border-white/20 rounded bg-surface-card dark:bg-surface-dark text-ink dark:text-on-dark outline-none"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveRename(conv.id, e);
                           if (e.key === 'Escape') setEditingId(null);
@@ -121,7 +121,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                         type="button"
                         onClick={handleCancelRename}
                         title={UI_STRINGS.CANCEL}
-                        className="text-muted hover:text-ink p-0.5"
+                        className="text-muted dark:text-muted-soft hover:text-ink dark:hover:text-on-dark p-0.5"
                       >
                         <X size={14} />
                       </button>
@@ -132,14 +132,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                         <span
                           className={`text-[13.5px] truncate tracking-[0.12px] ${
                             isActive
-                              ? 'text-ink font-medium'
-                              : 'text-body font-normal'
+                              ? 'text-ink dark:text-on-dark font-medium'
+                              : 'text-body dark:text-muted-soft font-normal'
                           }`}
                         >
                           {conv.title}
                         </span>
                         {conv.cropType && (
-                          <span className="text-[10.5px] text-muted truncate">
+                          <span className="text-[10.5px] text-muted dark:text-muted-soft truncate">
                             {conv.cropType}
                           </span>
                         )}
@@ -157,7 +157,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                           onClick={(e) => handleStartRename(conv, e)}
                           title={UI_STRINGS.RENAME}
                           aria-label={UI_STRINGS.RENAME}
-                          className="p-1 text-muted hover:text-ink rounded transition-colors"
+                          className="p-1 text-muted dark:text-muted-soft hover:text-ink dark:hover:text-on-dark rounded transition-colors"
                         >
                           <Edit3 size={13} />
                         </button>
@@ -166,7 +166,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                           onClick={(e) => handleDelete(conv.id, e)}
                           title={UI_STRINGS.DELETE}
                           aria-label={UI_STRINGS.DELETE}
-                          className="p-1 text-muted hover:text-semantic-error rounded transition-colors"
+                          className="p-1 text-muted dark:text-muted-soft hover:text-semantic-error rounded transition-colors"
                         >
                           <Trash2 size={13} />
                         </button>

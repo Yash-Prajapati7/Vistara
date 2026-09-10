@@ -38,6 +38,22 @@ export const UI_STRINGS = {
   SAVE: 'Save',
   CLOSE: 'Close',
 
+  // Theme & Appearance
+  THEME_LIGHT: 'light',
+  THEME_DARK: 'dark',
+  THEME_STORAGE_KEY: 'vistara-theme',
+  DARK_MODE: 'Dark Mode',
+  LIGHT_MODE: 'Light Mode',
+  SWITCH_TO_DARK: 'Switch to dark mode',
+  SWITCH_TO_LIGHT: 'Switch to light mode',
+  DARK_CLASS: 'dark',
+  MEDIA_QUERY_DARK: '(prefers-color-scheme: dark)',
+  TYPEOF_UNDEFINED: 'undefined',
+  STATUS_ON: 'ON',
+  STATUS_OFF: 'OFF',
+  EVENT_MOUSEDOWN: 'mousedown',
+  THEME_CONTEXT_ERROR: 'useTheme must be used within a ThemeProvider',
+
   // User Roles & Message Roles
   USER_ROLE_LABEL: 'Agronomist',
   FARMER_LABEL: 'Farmer',

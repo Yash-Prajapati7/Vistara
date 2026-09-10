@@ -103,7 +103,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
     >
       {/* Drag & Drop Visual Indicator Overlay */}
       {isDragging && (
-        <div className="absolute inset-x-5 inset-y-0 pb-4 bg-surface-strong/90 border-2 border-dashed border-ink rounded-3xl flex items-center justify-center gap-2 text-ink font-medium text-sm z-30 backdrop-blur-sm animate-fade-in">
+        <div className="absolute inset-x-5 inset-y-0 pb-4 bg-surface-strong/90 dark:bg-surface-dark-elevated/95 border-2 border-dashed border-ink dark:border-white/40 rounded-3xl flex items-center justify-center gap-2 text-ink dark:text-on-dark font-medium text-sm z-30 backdrop-blur-sm animate-fade-in">
           <ImageIcon size={20} />
           <span>{UI_STRINGS.DRAG_IMAGE_ACTIVE}</span>
         </div>
@@ -119,7 +119,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
       />
 
       {/* Main Input Card */}
-      <div className="bg-surface-card border border-hairline rounded-3xl p-3.5 sm:px-4 sm:py-3 shadow-soft transition-all duration-150 focus-within:border-hairline-strong">
+      <div className="bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-3xl p-3.5 sm:px-4 sm:py-3 shadow-soft transition-all duration-150 focus-within:border-hairline-strong dark:focus-within:border-white/25">
         {/* Staged Image Preview Badge */}
         {stagedImage && (
           <ImagePreview
@@ -136,7 +136,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
             onClick={() => fileInputRef.current?.click()}
             title={UI_STRINGS.ATTACH_IMAGE}
             aria-label={UI_STRINGS.ATTACH_IMAGE}
-            className="w-9 h-9 rounded-full bg-canvas-soft border border-hairline text-ink flex items-center justify-center cursor-pointer flex-shrink-0 transition-all duration-150 hover:bg-surface-strong active:scale-95"
+            className="w-9 h-9 rounded-full bg-canvas-soft dark:bg-surface-dark border border-hairline dark:border-white/10 text-ink dark:text-on-dark flex items-center justify-center cursor-pointer flex-shrink-0 transition-all duration-150 hover:bg-surface-strong dark:hover:bg-white/10 active:scale-95"
           >
             <ImageIcon size={17} strokeWidth={1.8} />
           </button>
@@ -151,7 +151,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
             placeholder={UI_STRINGS.INPUT_PLACEHOLDER}
             aria-label={UI_STRINGS.INPUT_PLACEHOLDER}
             disabled={disabled}
-            className="flex-1 resize-none border-0 bg-transparent text-[15px] font-body text-ink leading-normal py-1.5 px-1 max-h-40 outline-none tracking-wide placeholder:text-muted"
+            className="flex-1 resize-none border-0 bg-transparent text-[15px] font-body text-ink dark:text-on-dark leading-normal py-1.5 px-1 max-h-40 outline-none tracking-wide placeholder:text-muted dark:placeholder:text-muted-soft"
           />
 
           {/* Right Action Tools: Mic + Send Button */}
@@ -165,13 +165,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
               className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
                 isRecording
                   ? 'bg-red-500/15 text-semantic-error'
-                  : 'text-muted hover:text-ink hover:bg-canvas-soft'
+                  : 'text-muted dark:text-muted-soft hover:text-ink dark:hover:text-on-dark hover:bg-canvas-soft dark:hover:bg-white/10'
               }`}
             >
               <Mic size={17} strokeWidth={1.8} />
             </button>
 
-            {/* Primary Send Button: Near-black Ink Pill */}
+            {/* Primary Send Button: Near-black Ink Pill in light mode, crisp white in dark mode */}
             <button
               type="button"
               onClick={handleSubmit}
@@ -180,8 +180,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
               aria-label={UI_STRINGS.SEND_MESSAGE}
               className={`w-9 h-9 rounded-full border-0 flex items-center justify-center transition-all duration-150 ${
                 canSubmit
-                  ? 'bg-primary text-on-primary cursor-pointer hover:bg-primary-active active:scale-95 shadow-subtle'
-                  : 'bg-hairline text-muted-soft cursor-not-allowed'
+                  ? 'bg-primary dark:bg-white text-on-primary dark:text-ink cursor-pointer hover:bg-primary-active dark:hover:bg-white/90 active:scale-95 shadow-subtle'
+                  : 'bg-hairline dark:bg-white/10 text-muted-soft dark:text-white/20 cursor-not-allowed'
               }`}
             >
               <ArrowUp size={18} strokeWidth={2.4} />
@@ -191,7 +191,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
       </div>
 
       {/* Editorial Disclaimer Footer */}
-      <div className="mt-2 text-center text-xs text-muted tracking-wide font-body">
+      <div className="mt-2 text-center text-xs text-muted dark:text-muted-soft tracking-wide font-body">
         {UI_STRINGS.DISCLAIMER}
       </div>
     </div>

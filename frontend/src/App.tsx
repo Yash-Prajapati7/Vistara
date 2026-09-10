@@ -207,7 +207,7 @@ Would you like specific fungicide dosage charts, organic bio-stimulant protocols
   };
 
   return (
-    <div className="flex h-screen w-screen relative bg-canvas overflow-hidden">
+    <div className="flex h-screen w-screen relative bg-canvas dark:bg-canvas-deep overflow-hidden transition-colors duration-200">
       {/* Signature Atmospheric Background Orbs */}
       <AtmosphericOrbs />
 

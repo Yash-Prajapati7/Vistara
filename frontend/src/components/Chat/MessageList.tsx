@@ -49,9 +49,9 @@ export const MessageList: React.FC<MessageListProps> = ({
 
         {/* Live streaming indicator */}
         {isStreaming && (
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-surface-card border border-hairline rounded-2xl shadow-subtle w-fit mb-6 animate-fade-in">
-            <Sparkles size={16} className="text-primary animate-spin-slow" />
-            <span className="text-[13.5px] text-body italic tracking-wide">
+          <div className="flex items-center gap-2.5 px-4 py-3 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-2xl shadow-subtle w-fit mb-6 animate-fade-in">
+            <Sparkles size={16} className="text-primary dark:text-gradient-mint animate-spin-slow" />
+            <span className="text-[13.5px] text-body dark:text-muted-soft italic tracking-wide">
               {UI_STRINGS.GENERATING_RESPONSE}
             </span>
           </div>

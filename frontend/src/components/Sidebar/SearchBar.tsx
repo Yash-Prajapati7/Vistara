@@ -22,7 +22,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onClear }
         onChange={(e) => onChange(e.target.value)}
         placeholder={UI_STRINGS.SEARCH_PLACEHOLDER}
         aria-label={UI_STRINGS.SEARCH_PLACEHOLDER}
-        className="w-full h-[38px] pl-9 text-[13px] font-body text-ink bg-surface-card border border-hairline rounded-pill transition-all duration-150 focus:border-hairline-strong focus:shadow-subtle outline-none placeholder:text-muted"
+        className="w-full h-[38px] pl-9 text-[13px] font-body text-ink dark:text-on-dark bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-pill transition-all duration-150 focus:border-hairline-strong dark:focus:border-white/25 focus:shadow-subtle outline-none placeholder:text-muted dark:placeholder:text-muted-soft"
         style={{ paddingRight: value ? '32px' : '56px' }}
       />
 
@@ -31,12 +31,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, onClear }
           type="button"
           onClick={onClear}
           aria-label={UI_STRINGS.CLEAR_CONVERSATION}
-          className="absolute right-2.5 p-0.5 text-muted hover:text-ink cursor-pointer bg-transparent border-0 flex items-center justify-center transition-colors"
+          className="absolute right-2.5 p-0.5 text-muted dark:text-muted-soft hover:text-ink dark:hover:text-white cursor-pointer bg-transparent border-0 flex items-center justify-center transition-colors"
         >
           <X size={14} />
         </button>
       ) : (
-        <span className="absolute right-2.5 text-[10px] font-medium text-muted-soft px-1.5 py-0.5 bg-canvas-soft border border-hairline rounded font-body pointer-events-none">
+        <span className="absolute right-2.5 text-[10px] font-medium text-muted-soft dark:text-muted-soft px-1.5 py-0.5 bg-canvas-soft dark:bg-surface-dark border border-hairline dark:border-white/10 rounded font-body pointer-events-none">
           {UI_STRINGS.SEARCH_HINT}
         </span>
       )}
