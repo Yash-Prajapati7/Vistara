@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Top Branding & Collapse button */}
-        <div className="flex items-center justify-between px-4 pt-4.5 pb-3.5 border-b border-hairline-soft">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-hairline flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-ink text-on-primary flex items-center justify-center flex-shrink-0">
               <Sprout size={18} strokeWidth={2.2} />
