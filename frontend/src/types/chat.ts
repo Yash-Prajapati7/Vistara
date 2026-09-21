@@ -7,8 +7,8 @@ export interface ImageAttachment {
   sizeFormatted: string;
 }
 
-export type SeverityLevel = 'Low' | 'Moderate' | 'Severe' | 'Critical';
-export type PathogenCategory = 'Fungal' | 'Bacterial' | 'Viral' | 'Oomycete' | 'Pest Infestation' | 'Nutritional Deficiency';
+export type SeverityLevel = string;
+export type PathogenCategory = string;
 
 export interface DiagnosticData {
   crop: string;
@@ -30,6 +30,8 @@ export interface ChatMessage {
   imageAttachment?: ImageAttachment;
   diagnosticData?: DiagnosticData;
   isStreaming?: boolean;
+  thinkingContent?: string;
+  isThinking?: boolean;
 }
 
 export type TimeBucket = 'today' | 'yesterday' | 'previous_week';

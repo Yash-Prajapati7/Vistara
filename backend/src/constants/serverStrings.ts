@@ -1,0 +1,84 @@
+/**
+ * Centralized server string constants for Vistara backend.
+ * All API routes, SSE event tags, error codes, HTTP headers,
+ * and diagnostic delimiters are maintained here.
+ * Zero emojis per system guidelines.
+ */
+export const SERVER_STRINGS = {
+  // Application Information
+  APP_NAME: 'Vistara Backend',
+  APP_VERSION: '1.0.0',
+  SYSTEM_IDENTITY: 'VIsion-language System for Transformer-based Agricultural disease Recognition and Analysis',
+
+  // API Routes
+  ROUTE_ROOT: '/',
+  ROUTE_HEALTH: '/api/health',
+  ROUTE_CHAT: '/api/chat',
+  ROUTE_SESSION: '/api/chat/session',
+  ROUTE_SUB_SESSION: '/session/:id',
+
+  // HTTP Headers
+  HEADER_CONTENT_TYPE: 'Content-Type',
+  HEADER_CACHE_CONTROL: 'Cache-Control',
+  HEADER_CONNECTION: 'Connection',
+  MIME_EVENT_STREAM: 'text/event-stream',
+  MIME_APPLICATION_JSON: 'application/json',
+  CACHE_NO_CACHE: 'no-cache',
+  CONNECTION_KEEP_ALIVE: 'keep-alive',
+
+  // SSE Protocol & Event Types
+  EVENT_TEXT_DELTA: 'text-delta',
+  EVENT_THINKING_DELTA: 'thinking-delta',
+  EVENT_REASONING_DELTA: 'reasoning-delta',
+  EVENT_DIAGNOSTIC_DATA: 'diagnostic-data',
+  EVENT_DONE: 'done',
+  EVENT_ERROR: 'error',
+  SSE_DATA_PREFIX: 'data: ',
+  SSE_DOUBLE_NEWLINE: '\n\n',
+
+  // Reasoning & Thinking Delimiters
+  TAG_THINK_OPEN: '<think>',
+  TAG_THINK_CLOSE: '</think>',
+
+  // Context & Roles
+  ROLE_USER: 'user',
+  ROLE_ASSISTANT: 'assistant',
+  ROLE_SYSTEM: 'system',
+
+  // Multimodal Message Content Types
+  CONTENT_TYPE_TEXT: 'text',
+  CONTENT_TYPE_IMAGE: 'image',
+
+  // Defaults & Server Configuration
+  DEFAULT_SPECIMEN_NAME: 'crop_specimen.jpg',
+  DEFAULT_BODY_LIMIT: '50mb',
+  DEFAULT_PORT: '5000',
+  DEFAULT_ORIGIN_VITE: 'http://localhost:5173',
+  DEFAULT_ORIGIN_REACT: 'http://localhost:3000',
+  ENV_DEVELOPMENT: 'development',
+
+  // Type Identifiers
+  TYPEOF_FUNCTION: 'function',
+  TYPEOF_NUMBER: 'number',
+
+  // Status & Success Messages
+  STATUS_HEALTHY: 'healthy',
+  STATUS_SUCCESS: 'success',
+  STATUS_ERROR: 'error',
+  SESSION_CLEARED: 'Session context cleared successfully.',
+
+  // Error Messages
+  ERR_INTERNAL_SERVER: 'Internal server error occurred during diagnostic processing.',
+  ERR_MISSING_PROMPT: 'A valid text prompt or disease query is required.',
+  ERR_SESSION_NOT_FOUND: 'Diagnostic session context not found.',
+  ERR_INVALID_PAYLOAD: 'Invalid request payload format.',
+  ERR_AI_GENERATION_FAILED: 'Failed to generate diagnostic response from vision-language model.',
+  ERR_UNHANDLED_PIPELINE: 'Unhandled server error in request pipeline',
+
+  // Log Prefixes (strictly text-only, no emojis)
+  LOG_PREFIX_INFO: '[INFO]',
+  LOG_PREFIX_WARN: '[WARN]',
+  LOG_PREFIX_ERROR: '[ERROR]',
+  LOG_PREFIX_DEBUG: '[DEBUG]',
+  LOG_SERVER_STARTED: 'Vistara agricultural diagnostic server listening on port',
+} as const;

@@ -11,6 +11,7 @@ import {
 } from './data/mockData';
 import { ChatMessage, ConversationMeta, DiagnosticData, ImageAttachment } from './types/chat';
 import { UI_STRINGS } from './constants/uiStrings';
+import { chatService } from './services/chatService';
 
 export const App: React.FC = () => {
   const [conversations, setConversations] = useState<ConversationMeta[]>(INITIAL_CONVERSATIONS);
@@ -57,6 +58,9 @@ export const App: React.FC = () => {
     delete updatedMessages[id];
     setMessagesMap(updatedMessages);
 
+    // Delete session from backend context in background
+    chatService.deleteSessionContext(id).catch(() => {});
+
     if (activeConversationId === id) {
       if (updated.length > 0) {
         setActiveConversationId(updated[0].id);
@@ -75,6 +79,7 @@ export const App: React.FC = () => {
 
   // Clear messages in current conversation
   const handleClearChat = () => {
+    chatService.deleteSessionContext(activeConversationId).catch(() => {});
     setMessagesMap((prev) => ({ ...prev, [activeConversationId]: [] }));
   };
 
@@ -86,7 +91,7 @@ export const App: React.FC = () => {
 
     const newUserMessage: ChatMessage = {
       id: userMessageId,
-      role: 'user',
+      role: UI_STRINGS.ROLE_USER,
       content: text,
       timestamp: timeFormatted,
       imageAttachment: image,
@@ -94,7 +99,7 @@ export const App: React.FC = () => {
 
     // Update conversation title if it's currently generic
     if (activeConversation && (activeConversation.title === UI_STRINGS.DEFAULT_CASE_TITLE || activeMessages.length === 0)) {
-      const derivedTitle = text.slice(0, 34) || (image ? 'Leaf Pathology Diagnostic Scan' : 'Crop Symptom Analysis');
+      const derivedTitle = text.slice(0, 34) || (image ? UI_STRINGS.DERIVED_TITLE_LEAF_SCAN : UI_STRINGS.DERIVED_TITLE_CROP_ANALYSIS);
       handleRenameConversation(activeConversationId, derivedTitle);
     }
 
@@ -104,102 +109,120 @@ export const App: React.FC = () => {
       [activeConversationId]: nextMessages,
     }));
 
-    // Trigger simulated assistant response with streaming simulation
+    // Trigger live vision-language diagnostic streaming via backend
     setIsStreaming(true);
 
-    setTimeout(() => {
-      const assistantMessageId = `msg-a-${Date.now()}`;
-      let responseText = '';
-      let diagnosticData: DiagnosticData | undefined = undefined;
+    const assistantMessageId = `msg-a-${Date.now()}`;
+    const initialAssistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: UI_STRINGS.ROLE_ASSISTANT,
+      content: UI_STRINGS.EMPTY_STRING,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isStreaming: true,
+      thinkingContent: UI_STRINGS.EMPTY_STRING,
+      isThinking: true,
+    };
 
-      if (image) {
-        responseText = `### Diagnostic Report: Foliage Lesion Recognition
+    setMessagesMap((prev) => ({
+      ...prev,
+      [activeConversationId]: [...nextMessages, initialAssistantMessage],
+    }));
 
-Vistara's **${selectedModel}** vision-language pipeline processed the uploaded specimen image (**${image.name}**).
-
-#### Primary Findings & Pathogen Analysis
-* **Identified Disease**: **Early Blight (*Alternaria solani*)**
-* **Confidence Level**: **96.8%**
-* **Foliar Damage Rating**: **Moderate (28% canopy leaf area affected)**
-* **Characteristic Markers**: Dark brown concentric ring lesions ("target-board" appearance) with chlorotic yellow margins on mature leaves.
-
-#### Recommended Agronomic Interventions
-1. **Immediate Spray Protocol**:
-   - Apply *Chlorothalonil* (75% WP) at 2.0 g/L or *Azoxystrobin* (23% SC) at 1.0 mL/L for active spore suppression.
-2. **Organic / Biological Alternative**:
-   - Bio-fungicide spray containing *Trichoderma viride* or copper octanoate soap at 5-day intervals.
-3. **Preventive Canopy Hygiene**:
-   - Prune bottom leaves within 15 cm of soil surface to avoid splash dispersal of soil-borne spores.`;
-
-        diagnosticData = {
-          crop: 'Solanaceae Crop (Foliage Specimen)',
-          disease: 'Early Blight (Alternaria solani)',
-          pathogenType: 'Fungal',
-          confidence: 96.8,
-          severity: 'Moderate',
-          symptoms: [
-            'Concentric circular target-board spots',
-            'Chlorotic halo surrounding necrotic centers',
-            'Progressive defoliation starting from basal foliage',
-          ],
-          organicTreatment: 'Trichoderma viride (10g/L) or Copper octanoate soap',
-          chemicalTreatment: 'Chlorothalonil (2g/L) or Azoxystrobin (1mL/L)',
-          preventativeAction: 'Lower canopy pruning, drip irrigation conversion, crop rotation',
-        };
-      } else if (text.toLowerCase().includes('rust')) {
-        responseText = `### Cereal Pathology Assessment: Stripe Rust (*Puccinia striiformis*)
-
-#### Diagnostic Characteristics
-* **Pathogen**: *Puccinia striiformis f. sp. tritici*
-* **Primary Target**: Wheat, Barley, and Triticale flag leaves
-* **Visual Symptoms**: Bright yellow-to-orange linear pustules (uredinia) aligned strictly between leaf veins.
-* **Estimated Yield Impact**: Potential 30% - 50% loss if flag leaf is infected before milky ripe stage.
-
-#### Prescribed Field Treatment
-1. **Systemic Triazole Application**: Spray *Tebuconazole* (250 EC) at 1.0 L/ha or *Propiconazole* (250 EC) at 500 mL/ha upon initial pustule detection.
-2. **Monitoring Window**: Rescan foliage within 7–10 days to verify lesion arrest and lack of new spore pustules.`;
-
-        diagnosticData = {
-          crop: 'Triticum aestivum (Wheat)',
-          disease: 'Stripe Rust (Puccinia striiformis)',
-          pathogenType: 'Fungal',
-          confidence: 98.2,
-          severity: 'Severe',
-          symptoms: [
-            'Linear yellow-orange pustule rows between leaf veins',
-            'Premature desiccation of flag leaf canopy',
-            'Reduced grain test weight and shriveled kernels',
-          ],
-          organicTreatment: 'Preventive sulfur dust (80% WP) or biological Bacillus amyloliquefaciens',
-          chemicalTreatment: 'Tebuconazole 250 EC (1.0 L/ha) or Propiconazole (500 mL/ha)',
-          preventativeAction: 'Plant rust-resistant cultivars, monitor prevailing windward spore fronts',
-        };
-      } else {
-        responseText = `### Symptom Assessment & Agronomic Inquiry
-
-I have logged your clinical field query regarding: **"${text.slice(0, 60)}${text.length > 60 ? '...' : ''}"**.
-
-#### Agronomic Evaluation & Next Steps
-* To ensure precise pathogen differentiation between abiotic physiological stress (e.g. nitrogen/potassium chlorosis) and biotic fungal/bacterial leaf spot, **uploading a macro photo of the symptomatic leaf** is highly recommended.
-* Vistara's **${selectedModel}** evaluates spatial lesion borders, color histograms, and venation patterns with zero-shot transformer vision encoders.
-
-Would you like specific fungicide dosage charts, organic bio-stimulant protocols, or guidance on leaf sampling techniques?`;
-      }
-
-      const assistantMessage: ChatMessage = {
-        id: assistantMessageId,
-        role: 'assistant',
-        content: responseText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        diagnosticData,
-      };
-
-      setMessagesMap((prev) => ({
-        ...prev,
-        [activeConversationId]: [...nextMessages, assistantMessage],
-      }));
-      setIsStreaming(false);
-    }, 1100);
+    chatService.streamChatMessage({
+      sessionId: activeConversationId,
+      prompt: text,
+      imageAttachment: image,
+      modelId: UI_STRINGS.MODEL_ID_QWEN,
+      callbacks: {
+        onThinkingDelta: (delta: string) => {
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      thinkingContent: (msg.thinkingContent || UI_STRINGS.EMPTY_STRING) + delta,
+                      isThinking: true,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onTextDelta: (delta: string) => {
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: msg.content + delta,
+                      isThinking: false,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onDiagnosticData: (diagnosticData: DiagnosticData, markdownReport: string) => {
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: markdownReport || msg.content,
+                      diagnosticData,
+                      isThinking: false,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onError: (errorMessage: string) => {
+          setIsStreaming(false);
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: msg.content
+                        ? `${msg.content}\n\n### ${UI_STRINGS.DIAGNOSTIC_ALERT_TITLE}\n* ${UI_STRINGS.DIAGNOSTIC_STREAM_INTERRUPTED_LABEL}: ${errorMessage}`
+                        : `### ${UI_STRINGS.DIAGNOSTIC_SERVICE_NOTICE_TITLE}\n\n${errorMessage}\n\n*${UI_STRINGS.BACKEND_START_INSTRUCTIONS}*`,
+                      isStreaming: false,
+                      isThinking: false,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onComplete: () => {
+          setIsStreaming(false);
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, isStreaming: false, isThinking: false }
+                  : msg
+              ),
+            };
+          });
+        },
+      },
+    });
   };
 
   const handleSelectPrompt = (promptText: string) => {

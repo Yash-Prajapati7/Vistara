@@ -10,6 +10,9 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  Brain,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { ChatMessage } from '../../types/chat';
 import { UI_STRINGS } from '../../constants/uiStrings';
@@ -23,8 +26,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate 
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<typeof UI_STRINGS.FEEDBACK_UP | typeof UI_STRINGS.FEEDBACK_DOWN | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [userToggledThinking, setUserToggledThinking] = useState<boolean | null>(null);
 
   const isUser = message.role === UI_STRINGS.ROLE_USER;
+  const hasThinking = Boolean(message.thinkingContent || message.isThinking);
+  const isThinkingActive = Boolean(message.isThinking);
+  const isThinkingExpanded = userToggledThinking !== null ? userToggledThinking : isThinkingActive;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -185,8 +192,75 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate 
                 : 'rounded-2xl rounded-tl-sm'
             }`}
           >
+            {/* Model Thinking & Diagnostic Reasoning Showcase */}
+            {!isUser && hasThinking && (
+              <div className="mb-4 border border-hairline dark:border-white/10 rounded-xl overflow-hidden bg-canvas-soft/70 dark:bg-surface-dark/60 transition-all">
+                <button
+                  type="button"
+                  onClick={() => setUserToggledThinking(!isThinkingExpanded)}
+                  aria-label={isThinkingExpanded ? UI_STRINGS.THINKING_HIDE_LABEL : UI_STRINGS.THINKING_SHOW_LABEL}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs text-muted dark:text-muted-soft hover:text-ink dark:hover:text-on-dark transition-colors cursor-pointer bg-surface-card/60 dark:bg-white/[0.02]"
+                >
+                  <div className="flex items-center gap-2">
+                    <Brain
+                      size={14}
+                      className={
+                        isThinkingActive
+                          ? 'text-primary dark:text-gradient-peach animate-pulse'
+                          : 'text-muted dark:text-muted-soft'
+                      }
+                    />
+                    <span className="font-medium">
+                      {isThinkingActive
+                        ? UI_STRINGS.THINKING_IN_PROGRESS
+                        : UI_STRINGS.THINKING_HEADER}
+                    </span>
+                    <span
+                      className={`badge-pill text-[10px] py-0 px-1.5 ${
+                        isThinkingActive
+                          ? 'bg-primary/10 text-primary dark:text-gradient-peach border-transparent'
+                          : 'bg-surface-card dark:bg-white/5 text-muted dark:text-muted-soft border-hairline dark:border-white/10'
+                      }`}
+                    >
+                      {isThinkingActive
+                        ? UI_STRINGS.THINKING_BADGE_STREAMING
+                        : UI_STRINGS.THINKING_BADGE_COMPLETE}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isThinkingExpanded ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expandable Reasoning Scratchpad */}
+                {isThinkingExpanded && (
+                  <div className="p-3 border-t border-hairline-soft dark:border-white/10 max-h-60 overflow-y-auto font-mono text-[11.5px] leading-relaxed text-body-strong dark:text-on-dark/80 whitespace-pre-wrap bg-canvas dark:bg-black/20">
+                    {message.thinkingContent || (
+                      <div className="flex items-center gap-2 text-muted dark:text-muted-soft italic">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                        <span>{UI_STRINGS.THINKING_IN_PROGRESS}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Formatted Text Content */}
-            {renderFormattedContent(message.content)}
+            {message.content ? (
+              renderFormattedContent(message.content)
+            ) : (
+              !isUser && message.isStreaming && !isThinkingActive && (
+                <div className="flex items-center gap-2 text-xs text-muted dark:text-muted-soft py-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                  <span>{UI_STRINGS.GENERATING_RESPONSE}</span>
+                </div>
+              )
+            )}
 
             {/* Diagnostic Pathology Metadata Card if available */}
             {message.diagnosticData && (

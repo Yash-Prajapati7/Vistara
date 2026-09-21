@@ -105,4 +105,48 @@ export const UI_STRINGS = {
   IMAGE_ATTACHED_LABEL: 'Attached crop specimen photo',
   DRAG_IMAGE_ACTIVE: 'Drop crop foliage photo to analyze pathology...',
   GENERATING_RESPONSE: 'Processing leaf imagery through Transformer Vision-Language models...',
+
+  // Backend API Endpoints & Error Messages
+  API_CHAT_ENDPOINT: '/api/chat',
+  API_HEALTH_ENDPOINT: '/api/health',
+  API_SESSION_ENDPOINT: '/api/chat/session',
+  API_ERROR_NETWORK: 'Unable to reach Vistara pathology backend service. Check connection.',
+  API_STREAM_ERROR: 'Diagnostic stream encountered an interruption.',
+
+  // Server-Sent Events (SSE) Protocol Constants
+  SSE_EVENT_TEXT_DELTA: 'text-delta',
+  SSE_EVENT_THINKING_DELTA: 'thinking-delta',
+  SSE_EVENT_DIAGNOSTIC_DATA: 'diagnostic-data',
+  SSE_EVENT_DONE: 'done',
+  SSE_EVENT_ERROR: 'error',
+  SSE_DATA_PREFIX: 'data: ',
+
+  // Diagnostic Thinking & Reasoning Showcase
+  THINKING_HEADER: 'Diagnostic Reasoning Process',
+  THINKING_IN_PROGRESS: 'Analyzing crop pathology & foliar symptoms...',
+  THINKING_SHOW_LABEL: 'Show diagnostic thinking',
+  THINKING_HIDE_LABEL: 'Hide diagnostic thinking',
+  THINKING_BADGE_STREAMING: 'Analyzing',
+  THINKING_BADGE_COMPLETE: 'Thought Process',
+  DERIVED_TITLE_LEAF_SCAN: 'Leaf Pathology Diagnostic Scan',
+  DERIVED_TITLE_CROP_ANALYSIS: 'Crop Symptom Analysis',
+
+  // HTTP & MIME Constants
+  HTTP_HEADER_CONTENT_TYPE: 'Content-Type',
+  HTTP_MIME_JSON: 'application/json',
+  HTTP_MIME_JPEG: 'image/jpeg',
+  HTTP_RESPONSE_TYPE_TEXT: 'text' as const,
+
+  // General Primitives & System Identifiers
+  TYPEOF_STRING: 'string',
+  NEWLINE_SEPARATOR: '\n',
+  EMPTY_STRING: '',
+  PATH_SEPARATOR: '/',
+  MODEL_ID_QWEN: 'alibaba/qwen3.7-flash',
+
+  // Clinical Diagnostic Notice & Alert Labels
+  DIAGNOSTIC_ALERT_TITLE: 'Clinical Alert',
+  DIAGNOSTIC_SERVICE_NOTICE_TITLE: 'Diagnostic Service Notice',
+  DIAGNOSTIC_STREAM_INTERRUPTED_LABEL: 'Diagnostic stream interrupted',
+  BACKEND_START_INSTRUCTIONS: 'Please ensure the Vistara backend is running on port 5000 and AI_GATEWAY_API_KEY is configured in backend/.env.',
 } as const;
