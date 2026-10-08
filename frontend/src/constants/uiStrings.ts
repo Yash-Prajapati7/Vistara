@@ -110,6 +110,10 @@ export const UI_STRINGS = {
   API_CHAT_ENDPOINT: '/api/chat',
   API_HEALTH_ENDPOINT: '/api/health',
   API_SESSION_ENDPOINT: '/api/chat/session',
+  API_USER_CHATS_ENDPOINT: '/api/chat/user',
+  TITLE_SUFFIX_ENDPOINT: 'title',
+  DEFAULT_USER_ID: 'usr_default_agronomist',
+  QUERY_USER_ID: 'userId',
   API_ERROR_NETWORK: 'Unable to reach Vistara pathology backend service. Check connection.',
   API_STREAM_ERROR: 'Diagnostic stream encountered an interruption.',
 
@@ -143,6 +147,24 @@ export const UI_STRINGS = {
   EMPTY_STRING: '',
   PATH_SEPARATOR: '/',
   MODEL_ID_QWEN: 'alibaba/qwen3.7-flash',
+
+  // Time & Locale Formatting
+  TIME_FORMAT_2_DIGIT: '2-digit' as const,
+  TIME_JUST_NOW: 'Just now',
+
+  // Session & Specimen Defaults
+  DEFAULT_CONVERSATION_ID: 'conv-1',
+  DEFAULT_SPECIMEN_NAME: 'crop_foliage.jpg',
+  FRESH_SESSION_SNIPPET: 'Fresh session ready for crop leaf photos and disease symptoms...',
+  CROP_UNSPECIFIED: 'Unspecified',
+
+  // ID Prefixes
+  PREFIX_CONVERSATION: 'conv-',
+  PREFIX_TURN_USER: 'u-',
+  PREFIX_TURN_ASSISTANT: 'a-',
+  PREFIX_TURN_IMAGE: 'img-',
+  PREFIX_MSG_USER: 'msg-u-',
+  PREFIX_MSG_ASSISTANT: 'msg-a-',
 
   // Clinical Diagnostic Notice & Alert Labels
   DIAGNOSTIC_ALERT_TITLE: 'Clinical Alert',

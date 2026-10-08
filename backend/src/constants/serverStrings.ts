@@ -16,6 +16,10 @@ export const SERVER_STRINGS = {
   ROUTE_CHAT: '/api/chat',
   ROUTE_SESSION: '/api/chat/session',
   ROUTE_SUB_SESSION: '/session/:id',
+  ROUTE_SUB_SESSION_TITLE: '/session/:id/title',
+  ROUTE_USER_CHATS: '/user/:userId',
+  ROUTE_USERS: '/api/users',
+  ROUTE_USER_BY_ID: '/:userId',
 
   // HTTP Headers
   HEADER_CONTENT_TYPE: 'Content-Type',
@@ -25,6 +29,9 @@ export const SERVER_STRINGS = {
   MIME_APPLICATION_JSON: 'application/json',
   CACHE_NO_CACHE: 'no-cache',
   CONNECTION_KEEP_ALIVE: 'keep-alive',
+
+  //Empty String
+  EMPTY_STRING: '',
 
   // SSE Protocol & Event Types
   EVENT_TEXT_DELTA: 'text-delta',
@@ -74,6 +81,7 @@ export const SERVER_STRINGS = {
   ERR_INVALID_PAYLOAD: 'Invalid request payload format.',
   ERR_AI_GENERATION_FAILED: 'Failed to generate diagnostic response from vision-language model.',
   ERR_UNHANDLED_PIPELINE: 'Unhandled server error in request pipeline',
+  ERR_GET_USER_FAILED: 'Failed to get user ',
 
   // Log Prefixes (strictly text-only, no emojis)
   LOG_PREFIX_INFO: '[INFO]',

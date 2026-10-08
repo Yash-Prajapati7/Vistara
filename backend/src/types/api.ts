@@ -5,6 +5,7 @@ import { DiagnosticData, ImageAttachmentPayload } from './pathology.js';
  */
 export interface ChatRequestBody {
   sessionId?: string;
+  userId?: string;
   prompt: string;
   image?: ImageAttachmentPayload;
   modelId?: string;
@@ -12,6 +13,7 @@ export interface ChatRequestBody {
 
 export interface HealthResponsePayload {
   status: string;
+  database: string;
   timestamp: string;
   model: string;
   uptimeSeconds: number;

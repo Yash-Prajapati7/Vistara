@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { SERVER_STRINGS } from './constants/serverStrings.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { chatRouter } from './routes/chatRoutes.js';
+import { userRouter } from './routes/userRoutes.js';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -31,6 +32,7 @@ export function createApp(): Express {
   // Mount API route modules
   app.use(SERVER_STRINGS.ROUTE_HEALTH, healthRouter);
   app.use(SERVER_STRINGS.ROUTE_CHAT, chatRouter);
+  app.use(SERVER_STRINGS.ROUTE_USERS, userRouter);
 
   // Global error handler
   app.use(globalErrorHandler);

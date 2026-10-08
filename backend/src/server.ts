@@ -1,10 +1,14 @@
 import { createApp } from './app.js';
 import { SERVER_STRINGS } from './constants/serverStrings.js';
 import { MODEL_CONFIG } from './constants/modelConfig.js';
+import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { logger } from './utils/logger.js';
 
 const PORT = parseInt(process.env.PORT || SERVER_STRINGS.DEFAULT_PORT, 10);
 const app = createApp();
+
+// Connect to MongoDB database
+await connectDatabase();
 
 const server = app.listen(PORT, () => {
   logger.info(`${SERVER_STRINGS.LOG_SERVER_STARTED} ${PORT}`, {
@@ -16,15 +20,17 @@ const server = app.listen(PORT, () => {
 });
 
 // Graceful shutdown handling
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received. Shutting down diagnostic server gracefully...');
+  await disconnectDatabase();
   server.close(() => {
     process.exit(0);
   });
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received. Shutting down diagnostic server gracefully...');
+  await disconnectDatabase();
   server.close(() => {
     process.exit(0);
   });

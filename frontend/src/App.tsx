@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { ChatHeader } from './components/Chat/ChatHeader';
 import { MessageList } from './components/Chat/MessageList';
@@ -13,14 +13,114 @@ import { ChatMessage, ConversationMeta, DiagnosticData, ImageAttachment } from '
 import { UI_STRINGS } from './constants/uiStrings';
 import { chatService } from './services/chatService';
 
+interface RawTurn {
+  turnId: string;
+  prompt: string;
+  completion?: string;
+  imageBase64?: string;
+  imageMeta?: { name?: string };
+  thinkingContent?: string;
+  diagnosticData?: DiagnosticData;
+  timestamp?: string;
+}
+
+interface UserConversationSummary {
+  sessionId: string;
+  title: string;
+  cropType?: string;
+  updatedAt: string;
+  previewSnippet: string;
+  turnCount?: number;
+}
+
+/**
+ * Formats a timestamp string using centralized 2-digit time constants.
+ */
+const formatTimestamp = (dateInput?: string | Date): string => {
+  const date = dateInput ? new Date(dateInput) : new Date();
+  return date.toLocaleTimeString([], {
+    hour: UI_STRINGS.TIME_FORMAT_2_DIGIT,
+    minute: UI_STRINGS.TIME_FORMAT_2_DIGIT,
+  });
+};
+
 export const App: React.FC = () => {
   const [conversations, setConversations] = useState<ConversationMeta[]>(INITIAL_CONVERSATIONS);
-  const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
+  const [activeConversationId, setActiveConversationId] = useState<string>(UI_STRINGS.DEFAULT_CONVERSATION_ID);
   const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>(SAMPLE_INITIAL_MESSAGES);
   const [userProfile] = useState(INITIAL_USER_PROFILE);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedModel, setSelectedModel] = useState<string>(UI_STRINGS.MODEL_DEFAULT);
   const [isStreaming, setIsStreaming] = useState(false);
+
+  // Sync user conversations from MongoDB on initial mount
+  useEffect(() => {
+    let isMounted = true;
+    chatService
+      .fetchUserConversations(UI_STRINGS.DEFAULT_USER_ID)
+      .then((res: { conversations?: UserConversationSummary[] }) => {
+        if (!isMounted || !res?.conversations || res.conversations.length === 0) {
+          return;
+        }
+
+        const mapped: ConversationMeta[] = res.conversations.map((c) => ({
+          id: c.sessionId,
+          title: c.title,
+          updatedAt: formatTimestamp(c.updatedAt),
+          previewSnippet: c.previewSnippet,
+          timeBucket: UI_STRINGS.TIME_BUCKET_TODAY,
+          cropType: c.cropType,
+        }));
+
+        setConversations(mapped);
+        const firstSessionId = mapped[0].id;
+        setActiveConversationId(firstSessionId);
+
+        // Load full messages for first conversation
+        chatService
+          .loadSessionHistory(firstSessionId)
+          .then((sess: { turns?: RawTurn[] }) => {
+            if (!isMounted || !sess?.turns) return;
+            const messages: ChatMessage[] = [];
+            for (const turn of sess.turns) {
+              const timeStr = formatTimestamp(turn.timestamp);
+
+              messages.push({
+                id: `${UI_STRINGS.PREFIX_TURN_USER}${turn.turnId}`,
+                role: UI_STRINGS.ROLE_USER,
+                content: turn.prompt,
+                timestamp: timeStr,
+                imageAttachment: turn.imageBase64
+                  ? {
+                      id: `${UI_STRINGS.PREFIX_TURN_IMAGE}${turn.turnId}`,
+                      name: turn.imageMeta?.name || UI_STRINGS.DEFAULT_SPECIMEN_NAME,
+                      url: turn.imageBase64,
+                      sizeFormatted: UI_STRINGS.EMPTY_STRING,
+                    }
+                  : undefined,
+              });
+
+              if (turn.completion) {
+                messages.push({
+                  id: `${UI_STRINGS.PREFIX_TURN_ASSISTANT}${turn.turnId}`,
+                  role: UI_STRINGS.ROLE_ASSISTANT,
+                  content: turn.completion,
+                  timestamp: timeStr,
+                  diagnosticData: turn.diagnosticData,
+                  thinkingContent: turn.thinkingContent,
+                });
+              }
+            }
+            setMessagesMap((prev) => ({ ...prev, [firstSessionId]: messages }));
+          })
+          .catch(() => {});
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Current active conversation meta
   const activeConversation =
@@ -29,14 +129,14 @@ export const App: React.FC = () => {
 
   // Create a new crop diagnostic session
   const handleNewChat = () => {
-    const newId = `conv-${Date.now()}`;
+    const newId = `${UI_STRINGS.PREFIX_CONVERSATION}${Date.now()}`;
     const newConv: ConversationMeta = {
       id: newId,
       title: UI_STRINGS.DEFAULT_CASE_TITLE,
-      updatedAt: 'Just now',
-      previewSnippet: 'Fresh session ready for crop leaf photos and disease symptoms...',
-      timeBucket: 'today',
-      cropType: 'Unspecified',
+      updatedAt: UI_STRINGS.TIME_JUST_NOW,
+      previewSnippet: UI_STRINGS.FRESH_SESSION_SNIPPET,
+      timeBucket: UI_STRINGS.TIME_BUCKET_TODAY,
+      cropType: UI_STRINGS.CROP_UNSPECIFIED,
     };
 
     setConversations((prev) => [newConv, ...prev]);
@@ -44,12 +144,51 @@ export const App: React.FC = () => {
     setActiveConversationId(newId);
   };
 
-  // Switch active conversation
+  // Switch active conversation & lazy load messages from MongoDB if needed
   const handleSelectConversation = (id: string) => {
     setActiveConversationId(id);
+    if (!messagesMap[id] || messagesMap[id].length === 0) {
+      chatService
+        .loadSessionHistory(id)
+        .then((sess: { turns?: RawTurn[] }) => {
+          if (!sess?.turns) return;
+          const messages: ChatMessage[] = [];
+          for (const turn of sess.turns) {
+            const timeStr = formatTimestamp(turn.timestamp);
+
+            messages.push({
+              id: `${UI_STRINGS.PREFIX_TURN_USER}${turn.turnId}`,
+              role: UI_STRINGS.ROLE_USER,
+              content: turn.prompt,
+              timestamp: timeStr,
+              imageAttachment: turn.imageBase64
+                ? {
+                    id: `${UI_STRINGS.PREFIX_TURN_IMAGE}${turn.turnId}`,
+                    name: turn.imageMeta?.name || UI_STRINGS.DEFAULT_SPECIMEN_NAME,
+                    url: turn.imageBase64,
+                    sizeFormatted: UI_STRINGS.EMPTY_STRING,
+                  }
+                : undefined,
+            });
+
+            if (turn.completion) {
+              messages.push({
+                id: `${UI_STRINGS.PREFIX_TURN_ASSISTANT}${turn.turnId}`,
+                role: UI_STRINGS.ROLE_ASSISTANT,
+                content: turn.completion,
+                timestamp: timeStr,
+                diagnosticData: turn.diagnosticData,
+                thinkingContent: turn.thinkingContent,
+              });
+            }
+          }
+          setMessagesMap((prev) => ({ ...prev, [id]: messages }));
+        })
+        .catch(() => {});
+    }
   };
 
-  // Delete conversation
+  // Delete conversation from UI state and permanently from MongoDB database
   const handleDeleteConversation = (id: string) => {
     const updated = conversations.filter((c) => c.id !== id);
     setConversations(updated);
@@ -58,8 +197,8 @@ export const App: React.FC = () => {
     delete updatedMessages[id];
     setMessagesMap(updatedMessages);
 
-    // Delete session from backend context in background
-    chatService.deleteSessionContext(id).catch(() => {});
+    // Permanently purge chat document from MongoDB database
+    chatService.deleteChat(id, UI_STRINGS.DEFAULT_USER_ID).catch(() => {});
 
     if (activeConversationId === id) {
       if (updated.length > 0) {
@@ -70,24 +209,25 @@ export const App: React.FC = () => {
     }
   };
 
-  // Rename conversation title
+  // Rename conversation title in UI and MongoDB database
   const handleRenameConversation = (id: string, newTitle: string) => {
     setConversations((prev) =>
       prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
     );
+
+    // Persist new title into MongoDB
+    chatService.renameChat(id, newTitle, UI_STRINGS.DEFAULT_USER_ID).catch(() => {});
   };
 
   // Clear messages in current conversation
   const handleClearChat = () => {
-    chatService.deleteSessionContext(activeConversationId).catch(() => {});
-    setMessagesMap((prev) => ({ ...prev, [activeConversationId]: [] }));
+    handleDeleteConversation(activeConversationId);
   };
 
   // Send message and trigger assistant response
   const handleSendMessage = (text: string, image?: ImageAttachment) => {
-    const userMessageId = `msg-u-${Date.now()}`;
-    const now = new Date();
-    const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMessageId = `${UI_STRINGS.PREFIX_MSG_USER}${Date.now()}`;
+    const timeFormatted = formatTimestamp();
 
     const newUserMessage: ChatMessage = {
       id: userMessageId,
@@ -112,12 +252,12 @@ export const App: React.FC = () => {
     // Trigger live vision-language diagnostic streaming via backend
     setIsStreaming(true);
 
-    const assistantMessageId = `msg-a-${Date.now()}`;
+    const assistantMessageId = `${UI_STRINGS.PREFIX_MSG_ASSISTANT}${Date.now()}`;
     const initialAssistantMessage: ChatMessage = {
       id: assistantMessageId,
       role: UI_STRINGS.ROLE_ASSISTANT,
       content: UI_STRINGS.EMPTY_STRING,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: formatTimestamp(),
       isStreaming: true,
       thinkingContent: UI_STRINGS.EMPTY_STRING,
       isThinking: true,
@@ -130,6 +270,7 @@ export const App: React.FC = () => {
 
     chatService.streamChatMessage({
       sessionId: activeConversationId,
+      userId: UI_STRINGS.DEFAULT_USER_ID,
       prompt: text,
       imageAttachment: image,
       modelId: UI_STRINGS.MODEL_ID_QWEN,
@@ -220,6 +361,24 @@ export const App: React.FC = () => {
               ),
             };
           });
+
+          // Refresh user conversations from MongoDB to sync titles and previews
+          chatService
+            .fetchUserConversations(UI_STRINGS.DEFAULT_USER_ID)
+            .then((res: { conversations?: UserConversationSummary[] }) => {
+              if (res?.conversations && res.conversations.length > 0) {
+                const mapped: ConversationMeta[] = res.conversations.map((c) => ({
+                  id: c.sessionId,
+                  title: c.title,
+                  updatedAt: formatTimestamp(c.updatedAt),
+                  previewSnippet: c.previewSnippet,
+                  timeBucket: UI_STRINGS.TIME_BUCKET_TODAY,
+                  cropType: c.cropType,
+                }));
+                setConversations(mapped);
+              }
+            })
+            .catch(() => {});
         },
       },
     });
@@ -266,7 +425,7 @@ export const App: React.FC = () => {
           onSelectPrompt={handleSelectPrompt}
           onRegenerateLast={() => {
             if (activeMessages.length > 0) {
-              const lastUserMsg = [...activeMessages].reverse().find((m) => m.role === 'user');
+              const lastUserMsg = [...activeMessages].reverse().find((m) => m.role === UI_STRINGS.ROLE_USER);
               if (lastUserMsg) {
                 handleSendMessage(lastUserMsg.content, lastUserMsg.imageAttachment);
               }

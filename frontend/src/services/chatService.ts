@@ -12,6 +12,7 @@ export interface StreamCallbacks {
 
 export interface SendMessageParams {
   sessionId: string;
+  userId?: string;
   prompt: string;
   imageAttachment?: ImageAttachment;
   modelId?: string;
@@ -25,9 +26,11 @@ export interface SendMessageParams {
 export class ChatService {
   /**
    * Streams a chat/diagnostic response from the backend using Axios with progress tracking.
+   * Persists the user prompt and image base64 into MongoDB, and saves completion upon finish.
    */
   public async streamChatMessage({
     sessionId,
+    userId = UI_STRINGS.DEFAULT_USER_ID,
     prompt,
     imageAttachment,
     modelId,
@@ -37,6 +40,7 @@ export class ChatService {
 
     const payload = {
       sessionId,
+      userId,
       prompt,
       modelId,
       image: imageAttachment
@@ -114,18 +118,50 @@ export class ChatService {
   }
 
   /**
-   * Retrieves the current context snapshot and accumulated prompts for a session.
+   * Retrieves all chat conversations for a specific user from MongoDB.
    */
-  public async getSessionContext(sessionId: string) {
-    const response = await axios.get(`${UI_STRINGS.API_SESSION_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${sessionId}`);
+  public async fetchUserConversations(userId: string = UI_STRINGS.DEFAULT_USER_ID) {
+    const response = await axios.get(
+      `${UI_STRINGS.API_USER_CHATS_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${userId}`
+    );
     return response.data;
   }
 
   /**
-   * Clears the backend context for a session.
+   * Loads full dialogue history and base64 image data for a specific chat from MongoDB.
    */
-  public async deleteSessionContext(sessionId: string) {
-    const response = await axios.delete(`${UI_STRINGS.API_SESSION_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${sessionId}`);
+  public async loadSessionHistory(sessionId: string) {
+    const response = await axios.get(
+      `${UI_STRINGS.API_SESSION_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${sessionId}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Permanently deletes a chat session from MongoDB and cleans up state.
+   */
+  public async deleteChat(sessionId: string, userId: string = UI_STRINGS.DEFAULT_USER_ID) {
+    const response = await axios.delete(
+      `${UI_STRINGS.API_SESSION_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${sessionId}`,
+      {
+        params: { [UI_STRINGS.QUERY_USER_ID]: userId },
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Updates the title of a chat session in MongoDB.
+   */
+  public async renameChat(
+    sessionId: string,
+    title: string,
+    userId: string = UI_STRINGS.DEFAULT_USER_ID
+  ) {
+    const response = await axios.patch(
+      `${UI_STRINGS.API_SESSION_ENDPOINT}${UI_STRINGS.PATH_SEPARATOR}${sessionId}${UI_STRINGS.PATH_SEPARATOR}${UI_STRINGS.TITLE_SUFFIX_ENDPOINT}`,
+      { title, userId }
+    );
     return response.data;
   }
 

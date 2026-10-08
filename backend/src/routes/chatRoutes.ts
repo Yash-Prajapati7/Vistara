@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
+import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { validateChatRequest } from '../middleware/requestValidator.js';
+import { chatDiagnosticService } from '../services/chatDiagnosticService.js';
+import { chatHistoryService } from '../services/chatHistoryService.js';
 import { contextService } from '../services/contextService.js';
-import { streamPathologyDiagnosis } from '../services/aiService.js';
-import { parseModelResponse } from '../services/responseParser.js';
 import { logger } from '../utils/logger.js';
 
 export const chatRouter = Router();
@@ -11,211 +12,157 @@ export const chatRouter = Router();
 /**
  * POST /api/chat
  * Streams vision-language diagnostic response using Server-Sent Events (SSE).
- * Progressively emits text chunks, followed by validated DiagnosticData.
+ * Business logic, SSE coordination, reasoning tag parsing, and MongoDB persistence
+ * are handled within chatDiagnosticService.
  */
 chatRouter.post(
   SERVER_STRINGS.ROUTE_ROOT,
   validateChatRequest,
   async (req: Request, res: Response): Promise<void> => {
-    const { sessionId: clientSessionId, prompt, image, modelId } = req.body;
+    const { sessionId, userId, prompt, image, modelId } = req.body;
 
-    // Retrieve or generate session
-    const session = contextService.getOrCreateSession(clientSessionId);
-    const sessionId = session.sessionId;
+    await chatDiagnosticService.streamDiagnosis({
+      res,
+      clientSessionId: sessionId,
+      clientUserId: userId,
+      prompt,
+      image,
+      modelId,
+    });
+  }
+);
 
-    // Configure headers for real-time Server-Sent Events (SSE) streaming
-    res.setHeader(SERVER_STRINGS.HEADER_CONTENT_TYPE, SERVER_STRINGS.MIME_EVENT_STREAM);
-    res.setHeader(SERVER_STRINGS.HEADER_CACHE_CONTROL, SERVER_STRINGS.CACHE_NO_CACHE);
-    res.setHeader(SERVER_STRINGS.HEADER_CONNECTION, SERVER_STRINGS.CONNECTION_KEEP_ALIVE);
-
-    if (typeof res.flushHeaders === SERVER_STRINGS.TYPEOF_FUNCTION) {
-      res.flushHeaders();
-    }
-
-    let fullResponseText = '';
-
+/**
+ * GET /api/chat/user/:userId
+ * Retrieves all chat sessions for a specific user, sorted newest first.
+ * Excludes heavy base64 strings for fast loading.
+ */
+chatRouter.get(
+  SERVER_STRINGS.ROUTE_USER_CHATS,
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // Execute vision-language streaming pipeline with context understanding
-      const streamResult = await streamPathologyDiagnosis({
-        sessionId,
-        currentPrompt: prompt,
-        image,
-        modelId,
-      });
+      const rawUserId = req.params.userId;
+      const userId = Array.isArray(rawUserId) ? rawUserId[0] : String(rawUserId);
 
-      let isInsideThinkTag = false;
-
-      // Stream full parts (reasoning deltas and text deltas) to client as they are generated
-      for await (const part of streamResult.fullStream) {
-        if (part.type === SERVER_STRINGS.EVENT_REASONING_DELTA) {
-          res.write(
-            `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-              type: SERVER_STRINGS.EVENT_THINKING_DELTA,
-              text: part.text,
-            })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-          );
-        } else if (part.type === SERVER_STRINGS.EVENT_TEXT_DELTA) {
-          let text = part.text;
-
-          // Check for inline <think> tags if emitted directly in text stream
-          if (!isInsideThinkTag && text.includes(SERVER_STRINGS.TAG_THINK_OPEN)) {
-            isInsideThinkTag = true;
-            const parts = text.split(SERVER_STRINGS.TAG_THINK_OPEN);
-            if (parts[0]) {
-              fullResponseText += parts[0];
-              res.write(
-                `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-                  type: SERVER_STRINGS.EVENT_TEXT_DELTA,
-                  text: parts[0],
-                })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-              );
-            }
-            text = parts[1] || '';
-          }
-
-          if (isInsideThinkTag) {
-            if (text.includes(SERVER_STRINGS.TAG_THINK_CLOSE)) {
-              isInsideThinkTag = false;
-              const parts = text.split(SERVER_STRINGS.TAG_THINK_CLOSE);
-              if (parts[0]) {
-                res.write(
-                  `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-                    type: SERVER_STRINGS.EVENT_THINKING_DELTA,
-                    text: parts[0],
-                  })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-                );
-              }
-              if (parts[1]) {
-                fullResponseText += parts[1];
-                res.write(
-                  `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-                    type: SERVER_STRINGS.EVENT_TEXT_DELTA,
-                    text: parts[1],
-                  })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-                );
-              }
-            } else {
-              res.write(
-                `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-                  type: SERVER_STRINGS.EVENT_THINKING_DELTA,
-                  text: text,
-                })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-              );
-            }
-          } else {
-            fullResponseText += text;
-            res.write(
-              `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-                type: SERVER_STRINGS.EVENT_TEXT_DELTA,
-                text: text,
-              })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-            );
-          }
-        }
-      }
-
-      // Parse complete response to extract Markdown report and structured DiagnosticData
-      const { markdownReport, diagnosticData } = parseModelResponse(fullResponseText);
-
-      // Persist last response and diagnostic data into session context
-      contextService.updateModelResponse(sessionId, fullResponseText, diagnosticData);
-
-      // Emit structured diagnostic data event for rich UI rendering
-      res.write(
-        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-          type: SERVER_STRINGS.EVENT_DIAGNOSTIC_DATA,
-          diagnosticData,
-          markdownReport,
-          sessionId,
-        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-      );
-
-      // Emit completion marker
-      res.write(
-        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-          type: SERVER_STRINGS.EVENT_DONE,
-          sessionId,
-        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-      );
-
-      res.end();
-      logger.info('Completed diagnostic streaming for session', { sessionId });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : SERVER_STRINGS.ERR_AI_GENERATION_FAILED;
-      logger.error('Diagnostic streaming pipeline failed', error);
-
-      if (!res.headersSent) {
-        res.status(500).json({
-          error: SERVER_STRINGS.ERR_AI_GENERATION_FAILED,
-          message: errorMessage,
-        });
+      if (!userId) {
+        res.status(400).json({ error: DB_CONSTANTS.ERR_MISSING_USER_ID });
         return;
       }
 
-      res.write(
-        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-          type: SERVER_STRINGS.EVENT_ERROR,
-          error: errorMessage,
-        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-      );
-      res.end();
+      const conversations = await chatHistoryService.getUserChats(userId);
+      res.status(200).json({
+        status: SERVER_STRINGS.STATUS_SUCCESS,
+        userId,
+        count: conversations.length,
+        conversations,
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to retrieve user chats from MongoDB', error);
+      res.status(500).json({ error: SERVER_STRINGS.ERR_INTERNAL_SERVER });
     }
   }
 );
 
 /**
  * GET /api/chat/session/:id
- * Returns current context state (stored prompts array and last model response).
+ * Returns complete dialogue history from MongoDB (including base64 images and turns),
+ * or falls back to in-memory context state.
  */
 chatRouter.get(
   SERVER_STRINGS.ROUTE_SUB_SESSION,
-  (req: Request, res: Response): void => {
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     const sessionId = Array.isArray(rawId) ? rawId[0] : String(rawId);
-    const session = contextService.getSession(sessionId);
 
-    if (!session) {
-      res.status(404).json({
-        error: SERVER_STRINGS.ERR_SESSION_NOT_FOUND,
-        sessionId,
-      });
+    try {
+      const details = await chatDiagnosticService.getSessionDetails(sessionId);
+      if (!details) {
+        res.status(404).json({
+          error: SERVER_STRINGS.ERR_SESSION_NOT_FOUND,
+          sessionId,
+        });
+        return;
+      }
+
+      res.status(200).json(details);
+    } catch (error: unknown) {
+      logger.error('Failed to get session details', error);
+      res.status(500).json({ error: SERVER_STRINGS.ERR_INTERNAL_SERVER });
+    }
+  }
+);
+
+/**
+ * PATCH /api/chat/session/:id/title
+ * Updates the title of an existing chat session.
+ */
+chatRouter.patch(
+  SERVER_STRINGS.ROUTE_SUB_SESSION_TITLE,
+  async (req: Request, res: Response): Promise<void> => {
+    const rawId = req.params.id;
+    const sessionId = Array.isArray(rawId) ? rawId[0] : String(rawId);
+    const { title, userId } = req.body;
+
+    if (!title || typeof title !== 'string') {
+      res.status(400).json({ error: SERVER_STRINGS.ERR_INVALID_PAYLOAD });
       return;
     }
 
-    res.status(200).json({
-      sessionId: session.sessionId,
-      prompts: session.prompts,
-      hasLastResponse: Boolean(session.lastResponse),
-      lastDiagnosticData: session.lastDiagnosticData,
-      createdAt: new Date(session.createdAt).toISOString(),
-      updatedAt: new Date(session.updatedAt).toISOString(),
-    });
+    try {
+      const updated = await chatHistoryService.updateChatTitle(sessionId, userId, title);
+      if (!updated) {
+        res.status(404).json({ error: DB_CONSTANTS.ERR_CHAT_NOT_FOUND, sessionId });
+        return;
+      }
+
+      res.status(200).json({
+        status: SERVER_STRINGS.STATUS_SUCCESS,
+        message: DB_CONSTANTS.MSG_CHAT_RENAMED_SUCCESS,
+        sessionId,
+        title: title.trim(),
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to rename chat session', error);
+      res.status(500).json({ error: SERVER_STRINGS.ERR_INTERNAL_SERVER });
+    }
   }
 );
 
 /**
  * DELETE /api/chat/session/:id
- * Clears stored prompt array and last response context for a session.
+ * Permanently deletes chat from MongoDB and clears any in-memory cache.
  */
 chatRouter.delete(
   SERVER_STRINGS.ROUTE_SUB_SESSION,
-  (req: Request, res: Response): void => {
+  async (req: Request, res: Response): Promise<void> => {
     const rawId = req.params.id;
     const sessionId = Array.isArray(rawId) ? rawId[0] : String(rawId);
-    const deleted = contextService.deleteSession(sessionId);
+    const rawUserId = req.query.userId || req.body?.userId;
+    const userId = rawUserId ? String(rawUserId) : undefined;
 
-    if (!deleted) {
-      res.status(404).json({
-        error: SERVER_STRINGS.ERR_SESSION_NOT_FOUND,
+    try {
+      // Delete from MongoDB persistent collection
+      const dbDeleted = await chatHistoryService.deleteSession(sessionId, userId);
+
+      // Clear memory context as well
+      const memDeleted = contextService.deleteSession(sessionId);
+
+      if (!dbDeleted && !memDeleted) {
+        res.status(404).json({
+          error: DB_CONSTANTS.ERR_CHAT_NOT_FOUND,
+          sessionId,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        status: SERVER_STRINGS.STATUS_SUCCESS,
+        message: DB_CONSTANTS.MSG_CHAT_DELETED_SUCCESS,
         sessionId,
       });
-      return;
+    } catch (error: unknown) {
+      logger.error('Failed to delete chat session from database', error);
+      res.status(500).json({ error: DB_CONSTANTS.ERR_DELETE_CHAT_FAILED });
     }
-
-    res.status(200).json({
-      status: SERVER_STRINGS.STATUS_SUCCESS,
-      message: SERVER_STRINGS.SESSION_CLEARED,
-      sessionId,
-    });
   }
 );
