@@ -169,8 +169,23 @@ export const App: React.FC = () => {
     conversations.find((c) => c.id === activeConversationId) || conversations[0];
   const activeMessages = messagesMap[activeConversationId] || [];
 
+  // Determines if a conversation is an uncommitted blank new chat
+  const isBlankNewChat = (c: ConversationMeta): boolean => {
+    const msgs = messagesMap[c.id];
+    const hasNoMessages = !msgs || msgs.length === 0;
+    const isBlank =
+      c.title === UI_STRINGS.DEFAULT_CASE_TITLE ||
+      c.previewSnippet === UI_STRINGS.FRESH_SESSION_SNIPPET;
+    return hasNoMessages && isBlank;
+  };
+
   // Create a new crop diagnostic session
   const handleNewChat = () => {
+    // If the current active conversation is already empty, retain focus
+    if (activeMessages.length === 0) {
+      return;
+    }
+
     const newId = `${UI_STRINGS.PREFIX_CONVERSATION}${Date.now()}`;
     const newConv: ConversationMeta = {
       id: newId,
@@ -186,8 +201,21 @@ export const App: React.FC = () => {
     setActiveConversationId(newId);
   };
 
-  // Switch active conversation & lazy load messages from MongoDB if needed
+  // Switch active conversation & remove uncommitted blank new chats
   const handleSelectConversation = (id: string) => {
+    // Purge any uncommitted blank new chats from history list when user clicks on a chat
+    setConversations((prev) => prev.filter((c) => c.id === id || !isBlankNewChat(c)));
+
+    setMessagesMap((prev) => {
+      const updated = { ...prev };
+      conversations.forEach((c) => {
+        if (c.id !== id && isBlankNewChat(c)) {
+          delete updated[c.id];
+        }
+      });
+      return updated;
+    });
+
     setActiveConversationId(id);
     if (!messagesMap[id] || messagesMap[id].length === 0) {
       chatService
