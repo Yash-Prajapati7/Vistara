@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
 import { ChatMessage } from '../../types/chat';
 import { MessageItem } from './MessageItem';
 import { EmptyState } from './EmptyState';
-import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -46,16 +44,6 @@ export const MessageList: React.FC<MessageListProps> = ({
             }
           />
         ))}
-
-        {/* Live streaming indicator */}
-        {isStreaming && (
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-2xl shadow-subtle w-fit mb-6 animate-fade-in">
-            <Sparkles size={16} className="text-primary dark:text-gradient-mint animate-spin-slow" />
-            <span className="text-[13.5px] text-body dark:text-muted-soft italic tracking-wide">
-              {UI_STRINGS.GENERATING_RESPONSE}
-            </span>
-          </div>
-        )}
 
         <div ref={bottomRef} className="h-[1px]" />
       </div>
