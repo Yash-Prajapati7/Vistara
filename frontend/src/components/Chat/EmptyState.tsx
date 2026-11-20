@@ -32,7 +32,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onSelectPrompt }) => {
 
       {/* Editorial Headline (EB Garamond 300) */}
       <h1 className="font-display text-4xl sm:text-[44px] font-light leading-[1.1] tracking-tight text-ink dark:text-on-dark mb-4 max-w-[700px]">
-        Transformer-based Intelligence for Crop Pathology & Disease Recognition
+        Intelligent Vision for Crop Pathology & Disease Recognition
       </h1>
 
       {/* Editorial Subtitle (Inter 400 with letter-spacing) */}

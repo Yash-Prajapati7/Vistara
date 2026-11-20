@@ -65,7 +65,7 @@ export const SUGGESTION_PROMPTS: SuggestionPrompt[] = [
   {
     id: 'sug-1',
     title: 'Leaf Foliage Pathology Scan',
-    description: 'Upload a macro photo of infected leaf blades for transformer-based pathogen classification.',
+    description: 'Upload a macro photo of infected leaf blades for rapid pathogen classification.',
     promptText: 'I am uploading a leaf photo showing dark brown water-soaked lesions. Please classify the pathogen, calculate disease severity percentage, and prescribe immediate field interventions.',
     tag: 'Foliage Pathology',
     cropTarget: 'Solanaceous / Vegetables',
@@ -109,7 +109,7 @@ export const SAMPLE_INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       role: 'assistant',
       content: `### Pathology Diagnostic Assessment: Tomato Late Blight
 
-Vistara has evaluated the foliar symptoms through the Transformer Vision-Language pipeline. The observed water-soaked brown lesions with pale halos and rapid stem necrosis are pathognomonic for **Late Blight**.
+Based on the foliar symptoms presented, the observed water-soaked brown lesions with pale halos and rapid stem necrosis are pathognomonic for **Late Blight**.
 
 #### Pathogen Profile
 * **Causal Organism**: *Phytophthora infestans* (Oomycete plant pathogen)

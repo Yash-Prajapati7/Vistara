@@ -152,7 +152,7 @@ export class ChatDiagnosticService {
       try {
         await chatHistoryService.recordCompletion(
           sessionId,
-          fullResponseText,
+          markdownReport || fullResponseText,
           diagnosticData,
           fullThinkingText
         );
@@ -160,15 +160,17 @@ export class ChatDiagnosticService {
         logger.error('Failed to persist LLM completion to MongoDB', dbSaveError);
       }
 
-      // Emit structured diagnostic data event for rich UI rendering
-      res.write(
-        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
-          type: SERVER_STRINGS.EVENT_DIAGNOSTIC_DATA,
-          diagnosticData,
-          markdownReport,
-          sessionId,
-        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
-      );
+      // Emit structured diagnostic data event for rich UI rendering ONLY if diagnosis was generated
+      if (diagnosticData) {
+        res.write(
+          `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
+            type: SERVER_STRINGS.EVENT_DIAGNOSTIC_DATA,
+            diagnosticData,
+            markdownReport,
+            sessionId,
+          })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
+        );
+      }
 
       // Emit completion marker
       res.write(

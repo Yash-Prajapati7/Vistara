@@ -10,19 +10,21 @@ export const UI_STRINGS = {
   BRAND_ACRONYM_SHORT: 'Transformer-based Agricultural Vision-Language System',
   BRAND_SUBTITLE: 'Plant Pathology & Crop Health Intelligence',
   APP_TITLE: 'Diagnostic Workspace',
-  DEFAULT_CASE_TITLE: 'New Pathology Case',
+  DEFAULT_CASE_TITLE: 'New Consultation',
+  TITLE_GENERAL_CONSULTATION: 'General Consultation',
+  TITLE_AGRONOMIC_CONSULTATION: 'Agronomic Consultation',
   MODEL_DEFAULT: 'Vistara AgriVision 2.0 (Transformer VL)',
   MODEL_BADGE: 'AGRI-VISION',
 
   // Actions & Buttons
   NEW_ANALYSIS: 'New Analysis',
   SEND: 'Analyze',
-  SEND_MESSAGE: 'Send for pathology analysis',
+  SEND_MESSAGE: 'Send message',
   ATTACH_IMAGE: 'Upload crop or leaf photo',
   VOICE_INPUT: 'Dictate field notes',
   REMOVE_IMAGE: 'Remove photo',
   SEARCH_PLACEHOLDER: 'Search crop diagnostic sessions...',
-  INPUT_PLACEHOLDER: 'Describe crop symptoms or upload a leaf photo for disease identification...',
+  INPUT_PLACEHOLDER: 'Ask a question, describe crop symptoms, or upload a leaf photo...',
   COLLAPSE_SIDEBAR: 'Collapse sidebar',
   EXPAND_SIDEBAR: 'Expand sidebar',
   CLEAR_CONVERSATION: 'Clear session',
@@ -103,8 +105,8 @@ export const UI_STRINGS = {
   // Footers & Disclaimers
   DISCLAIMER: 'Vistara provides AI-assisted agricultural diagnostics. Cross-verify critical field treatments with local agricultural extension officers.',
   IMAGE_ATTACHED_LABEL: 'Attached crop specimen photo',
-  DRAG_IMAGE_ACTIVE: 'Drop crop foliage photo to analyze pathology...',
-  GENERATING_RESPONSE: 'Processing leaf imagery through Transformer Vision-Language models...',
+  DRAG_IMAGE_ACTIVE: 'Drop crop or leaf photo here...',
+  GENERATING_RESPONSE: 'Generating response...',
 
   // Backend API Endpoints & Error Messages
   API_CHAT_ENDPOINT: '/api/chat',
@@ -126,8 +128,8 @@ export const UI_STRINGS = {
   SSE_DATA_PREFIX: 'data: ',
 
   // Diagnostic Thinking & Reasoning Showcase
-  THINKING_HEADER: 'Diagnostic Reasoning Process',
-  THINKING_IN_PROGRESS: 'Analyzing crop pathology & foliar symptoms...',
+  THINKING_HEADER: 'Reasoning Process',
+  THINKING_IN_PROGRESS: 'Reasoning...',
   THINKING_SHOW_LABEL: 'Show diagnostic thinking',
   THINKING_HIDE_LABEL: 'Hide diagnostic thinking',
   THINKING_BADGE_STREAMING: 'Analyzing',
@@ -155,7 +157,7 @@ export const UI_STRINGS = {
   // Session & Specimen Defaults
   DEFAULT_CONVERSATION_ID: 'conv-1',
   DEFAULT_SPECIMEN_NAME: 'crop_foliage.jpg',
-  FRESH_SESSION_SNIPPET: 'Fresh session ready for crop leaf photos and disease symptoms...',
+  FRESH_SESSION_SNIPPET: 'Ready for crop health questions or leaf specimen photos...',
   CROP_UNSPECIFIED: 'Unspecified',
 
   // ID Prefixes

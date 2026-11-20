@@ -1,7 +1,6 @@
 /**
  * Centralized database constants for MongoDB collections, fields, and queries.
  * Strictly adheres to .agents/agents.md - zero plain strings in handlers or models.
- * Zero emojis per system guidelines.
  */
 export const DB_CONSTANTS = {
   // Collections
@@ -67,7 +66,10 @@ export const DB_CONSTANTS = {
   DEFAULT_USER_INITIALS: 'EM',
   DEFAULT_USER_TIER: 'RESEARCH PRO',
   DEFAULT_SCANS_REMAINING: '1,420 / 2,000 scans this cycle',
-  DEFAULT_CHAT_TITLE: 'New Foliage Pathology Case',
+  DEFAULT_CHAT_TITLE: 'New Consultation',
+  TITLE_GENERAL_CONSULTATION: 'General Consultation',
+  TITLE_AGRONOMIC_CONSULTATION: 'Agronomic Consultation',
+  TITLE_LEAF_SPECIMEN_SCAN: 'Leaf Specimen Scan',
 
   // Connection & Lifecycle Event Strings
   EVENT_CONNECTED: 'connected',

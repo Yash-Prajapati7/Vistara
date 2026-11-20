@@ -44,6 +44,46 @@ const formatTimestamp = (dateInput?: string | Date): string => {
   });
 };
 
+/**
+ * Intelligently derives a clean, context-appropriate title for a chat session.
+ * Conversational inquiries (greetings, identity questions) receive "General Consultation".
+ * Photo uploads start as "Leaf Specimen Scan" until diagnosed.
+ */
+export const deriveChatTitle = (prompt: string, hasImage: boolean): string => {
+  if (hasImage) {
+    return UI_STRINGS.DERIVED_TITLE_LEAF_SCAN;
+  }
+
+  const trimmed = prompt.trim();
+  if (!trimmed) {
+    return UI_STRINGS.DEFAULT_CASE_TITLE;
+  }
+
+  const GREETING_REGEX = /^(hi|hello|hey|good\s+(morning|afternoon|evening|day)|greetings|howdy|what'?s\s+up|yo)\b/i;
+  const IDENTITY_REGEX = /^(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do|tell\s+me\s+about\s+yourself|help|introduce\s+yourself|how\s+are\s+you)\b/i;
+
+  if (GREETING_REGEX.test(trimmed) || IDENTITY_REGEX.test(trimmed)) {
+    return UI_STRINGS.TITLE_GENERAL_CONSULTATION;
+  }
+
+  const cleanPrompt = trimmed
+    .replace(/^(can\s+you\s+(help\s+me\s+with|tell\s+me\s+about|explain)|please\s+tell\s+me\s+about|what\s+is\s+the|what\s+are\s+the|how\s+to|how\s+do\s+i)\s+/i, UI_STRINGS.EMPTY_STRING)
+    .replace(/[?.!,;:]+$/, UI_STRINGS.EMPTY_STRING)
+    .trim();
+
+  if (cleanPrompt.length < 3) {
+    return UI_STRINGS.TITLE_AGRONOMIC_CONSULTATION;
+  }
+
+  const titleCased = cleanPrompt
+    .split(/\s+/)
+    .slice(0, 5)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+
+  return titleCased.length > 36 ? `${titleCased.substring(0, 33)}...` : titleCased;
+};
+
 export const App: React.FC = () => {
   const [conversations, setConversations] = useState<ConversationMeta[]>(INITIAL_CONVERSATIONS);
   const [activeConversationId, setActiveConversationId] = useState<string>(UI_STRINGS.DEFAULT_CONVERSATION_ID);
@@ -239,7 +279,7 @@ export const App: React.FC = () => {
 
     // Update conversation title if it's currently generic
     if (activeConversation && (activeConversation.title === UI_STRINGS.DEFAULT_CASE_TITLE || activeMessages.length === 0)) {
-      const derivedTitle = text.slice(0, 34) || (image ? UI_STRINGS.DERIVED_TITLE_LEAF_SCAN : UI_STRINGS.DERIVED_TITLE_CROP_ANALYSIS);
+      const derivedTitle = deriveChatTitle(text, Boolean(image));
       handleRenameConversation(activeConversationId, derivedTitle);
     }
 
@@ -310,6 +350,11 @@ export const App: React.FC = () => {
           });
         },
         onDiagnosticData: (diagnosticData: DiagnosticData, markdownReport: string) => {
+          if (diagnosticData?.crop && diagnosticData?.disease) {
+            const diagnosedTitle = `${diagnosticData.crop} ${diagnosticData.disease} Analysis`;
+            handleRenameConversation(activeConversationId, diagnosedTitle);
+          }
+
           setMessagesMap((prev) => {
             const currentList = prev[activeConversationId] || [];
             return {

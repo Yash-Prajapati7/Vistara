@@ -80,17 +80,20 @@ class ContextService {
   public updateModelResponse(
     sessionId: string,
     fullResponse: string,
-    diagnosticData: DiagnosticData
+    diagnosticData?: DiagnosticData | null
   ): void {
     const session = this.getOrCreateSession(sessionId);
     session.lastResponse = fullResponse;
-    session.lastDiagnosticData = diagnosticData;
+    if (diagnosticData) {
+      session.lastDiagnosticData = diagnosticData;
+    }
     session.updatedAt = Date.now();
 
-    logger.info('Updated context with last model response and diagnostic data', {
+    logger.info('Updated context with last model response and diagnostic state', {
       sessionId,
-      crop: diagnosticData.crop,
-      disease: diagnosticData.disease,
+      hasDiagnosticData: Boolean(diagnosticData),
+      crop: diagnosticData?.crop,
+      disease: diagnosticData?.disease,
     });
   }
 

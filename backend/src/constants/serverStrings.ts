@@ -2,7 +2,6 @@
  * Centralized server string constants for Vistara backend.
  * All API routes, SSE event tags, error codes, HTTP headers,
  * and diagnostic delimiters are maintained here.
- * Zero emojis per system guidelines.
  */
 export const SERVER_STRINGS = {
   // Application Information
