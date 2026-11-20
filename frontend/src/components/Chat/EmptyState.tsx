@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sprout, ArrowUpRight, Leaf, Activity, ShieldAlert, FileSpreadsheet } from 'lucide-react';
+import { ArrowUpRight, Leaf, Activity, ShieldAlert, FileSpreadsheet } from 'lucide-react';
 import { SUGGESTION_PROMPTS } from '../../data/mockData';
 import { SuggestionPrompt } from '../../types/chat';
 
@@ -23,23 +23,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ onSelectPrompt }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center max-w-[820px] mx-auto px-5 pt-9 pb-5 text-center relative z-10">
-      {/* Decorative Brand Badge */}
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 shadow-subtle mb-5 text-[11px] font-semibold tracking-wider text-ink dark:text-on-dark uppercase">
-        <Sprout size={13} className="text-ink dark:text-on-dark" />
-        <span>Vistara Vision-Language Diagnostic System</span>
-      </div>
-
-      {/* Editorial Headline (EB Garamond 300) */}
-      <h1 className="font-display text-4xl sm:text-[44px] font-light leading-[1.1] tracking-tight text-ink dark:text-on-dark mb-4 max-w-[700px]">
-        Intelligent Vision for Crop Pathology & Disease Recognition
-      </h1>
-
-      {/* Editorial Subtitle (Inter 400 with letter-spacing) */}
-      <p className="font-body text-[15.5px] font-normal leading-relaxed tracking-wide text-body dark:text-muted-soft max-w-[600px] mb-9">
-        Upload high-resolution leaf or plant imagery to identify causal pathogens, evaluate foliar lesion severity, and generate evidence-based agronomic treatment regimens.
-      </p>
-
+    <div className="flex flex-col items-center justify-center max-w-[820px] w-full mx-auto px-5 py-6 text-center relative z-10">
       {/* 2x2 Feature Suggestion Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full text-left">
         {SUGGESTION_PROMPTS.map((prompt: SuggestionPrompt) => (
