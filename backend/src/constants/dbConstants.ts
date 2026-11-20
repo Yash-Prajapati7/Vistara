@@ -88,6 +88,9 @@ export const DB_CONSTANTS = {
   MSG_CHAT_DELETED_SUCCESS: 'Diagnostic case deleted successfully from database.',
   MSG_CHAT_RENAMED_SUCCESS: 'Diagnostic case title updated successfully.',
 
+  RETURN_DOCUMENT_BEFORE: 'before',
+  RETURN_DOCUMENT_AFTER: 'after',
+
   // Status Strings
   STATUS_CONNECTED: 'connected',
   STATUS_DISCONNECTED: 'disconnected',

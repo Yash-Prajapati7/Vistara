@@ -2,7 +2,6 @@ import { ChatModel } from '../models/chatModel.js';
 import { ChatDocument, ChatTurn, ChatSummary } from '../types/database.js';
 import { DiagnosticData, ImageAttachmentPayload } from '../types/pathology.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
-import { MODEL_CONFIG } from '../constants/modelConfig.js';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { logger } from '../utils/logger.js';
 
@@ -106,7 +105,7 @@ export class ChatHistoryService {
           [DB_CONSTANTS.FIELD_TURNS]: turn,
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: DB_CONSTANTS.RETURN_DOCUMENT_AFTER }
     );
 
     logger.info('Recorded user turn into MongoDB chat', {
