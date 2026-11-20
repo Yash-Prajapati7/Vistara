@@ -4,6 +4,7 @@ import { ChatHeader } from './components/Chat/ChatHeader';
 import { MessageList } from './components/Chat/MessageList';
 import { ChatInput } from './components/InputDeck/ChatInput';
 import { AtmosphericOrbs } from './components/AtmosphericOrbs';
+import { DeleteConfirmModal } from './components/Modal/DeleteConfirmModal';
 import {
   INITIAL_CONVERSATIONS,
   INITIAL_USER_PROFILE,
@@ -92,6 +93,7 @@ export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedModel, setSelectedModel] = useState<string>(UI_STRINGS.MODEL_DEFAULT);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   // Sync user conversations from MongoDB on initial mount
   useEffect(() => {
@@ -259,9 +261,27 @@ export const App: React.FC = () => {
     chatService.renameChat(id, newTitle, UI_STRINGS.DEFAULT_USER_ID).catch(() => {});
   };
 
-  // Clear messages in current conversation
+  // Request deletion confirmation dialog
+  const handleRequestDelete = (id: string) => {
+    setPendingDeleteId(id);
+  };
+
+  // Confirmed deletion from modal
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId) {
+      handleDeleteConversation(pendingDeleteId);
+      setPendingDeleteId(null);
+    }
+  };
+
+  // Cancel deletion dialog
+  const handleCancelDelete = () => {
+    setPendingDeleteId(null);
+  };
+
+  // Clear messages in current conversation with confirmation
   const handleClearChat = () => {
-    handleDeleteConversation(activeConversationId);
+    setPendingDeleteId(activeConversationId);
   };
 
   // Send message and trigger assistant response
@@ -447,7 +467,7 @@ export const App: React.FC = () => {
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
-        onDeleteConversation={handleDeleteConversation}
+        onDeleteConversation={handleRequestDelete}
         onRenameConversation={handleRenameConversation}
       />
 
@@ -481,6 +501,14 @@ export const App: React.FC = () => {
         {/* Center Floating Input Deck */}
         <ChatInput onSendMessage={handleSendMessage} disabled={isStreaming} />
       </main>
+
+      {/* Delete Conversation Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={Boolean(pendingDeleteId)}
+        conversationTitle={conversations.find((c) => c.id === pendingDeleteId)?.title}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 };

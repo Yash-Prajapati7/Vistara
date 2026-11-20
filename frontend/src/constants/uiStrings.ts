@@ -40,6 +40,13 @@ export const UI_STRINGS = {
   SAVE: 'Save',
   CLOSE: 'Close',
 
+  // Delete Confirmation Modal
+  DELETE_MODAL_TITLE: 'Delete Conversation',
+  DELETE_MODAL_DESCRIPTION: 'Are you sure you want to permanently delete this diagnostic session?',
+  DELETE_MODAL_CONFIRM: 'Delete Session',
+  DELETE_MODAL_CANCEL: 'Cancel',
+  DELETE_MODAL_CLOSE_ARIA: 'Close delete confirmation dialog',
+
   // Theme & Appearance
   THEME_LIGHT: 'light',
   THEME_DARK: 'dark',
