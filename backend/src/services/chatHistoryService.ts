@@ -1,6 +1,6 @@
 import { ChatModel } from '../models/chatModel.js';
 import { ChatDocument, ChatTurn, ChatSummary } from '../types/database.js';
-import { DiagnosticData, ImageAttachmentPayload } from '../types/pathology.js';
+import { DiagnosticData, ImageAttachmentPayload, VideoAttachmentPayload } from '../types/pathology.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { logger } from '../utils/logger.js';
@@ -8,9 +8,14 @@ import { logger } from '../utils/logger.js';
 /**
  * Intelligently derives a clean, context-appropriate title for a chat session.
  * Conversational inquiries (greetings, identity questions) receive "General Consultation".
+ * Video scans receive "Field Video Diagnostic Scan".
  * Photo uploads start as "Leaf Specimen Scan" until diagnosed.
  */
-export function deriveChatTitle(prompt: string, hasImage: boolean): string {
+export function deriveChatTitle(prompt: string, hasImage: boolean, hasVideo: boolean = false): string {
+  if (hasVideo) {
+    return DB_CONSTANTS.TITLE_FIELD_VIDEO_SCAN;
+  }
+
   if (hasImage) {
     return DB_CONSTANTS.TITLE_LEAF_SPECIMEN_SCAN;
   }
@@ -68,13 +73,14 @@ export class ChatHistoryService {
   }
 
   /**
-   * Appends a user prompt turn into the chat document, including the raw base64 image string.
+   * Appends a user prompt turn into the chat document, including the raw base64 image/video string.
    */
   public async recordUserTurn(
     sessionId: string,
     userId: string,
     prompt: string,
-    image?: ImageAttachmentPayload
+    image?: ImageAttachmentPayload,
+    video?: VideoAttachmentPayload
   ): Promise<string> {
     const turnId = `turn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const turn: ChatTurn = {
@@ -88,11 +94,20 @@ export class ChatHistoryService {
             [DB_CONSTANTS.FIELD_IMAGE_MIME_TYPE]: image.mimeType || 'image/jpeg',
           }
         : undefined,
+      [DB_CONSTANTS.FIELD_VIDEO_BASE64]: video?.data,
+      [DB_CONSTANTS.FIELD_VIDEO_META]: video
+        ? {
+            [DB_CONSTANTS.FIELD_VIDEO_NAME]: video.name,
+            [DB_CONSTANTS.FIELD_VIDEO_MIME_TYPE]: video.mimeType || 'video/mp4',
+            [DB_CONSTANTS.FIELD_VIDEO_SIZE_BYTES]: video.sizeBytes,
+            [DB_CONSTANTS.FIELD_VIDEO_DURATION]: video.durationSeconds,
+          }
+        : undefined,
       [DB_CONSTANTS.FIELD_TIMESTAMP]: new Date(),
     };
 
     // Intelligently derive title for new session based on prompt and specimen presence
-    const initialTitle = deriveChatTitle(prompt, Boolean(image?.data));
+    const initialTitle = deriveChatTitle(prompt, Boolean(image?.data), Boolean(video?.data));
 
     await ChatModel.findOneAndUpdate(
       { [DB_CONSTANTS.FIELD_SESSION_ID]: sessionId },
@@ -112,6 +127,7 @@ export class ChatHistoryService {
       sessionId,
       turnId,
       hasImage: Boolean(image?.data),
+      hasVideo: Boolean(video?.data),
     });
 
     return turnId;
@@ -177,6 +193,7 @@ export class ChatHistoryService {
       .sort({ [DB_CONSTANTS.FIELD_UPDATED_AT]: DB_CONSTANTS.SORT_DESCENDING })
       .select({
         [DB_CONSTANTS.PROJECTION_EXCLUDE_TURNS_IMAGE]: 0,
+        [DB_CONSTANTS.PROJECTION_EXCLUDE_TURNS_VIDEO]: 0,
         [DB_CONSTANTS.PROJECTION_EXCLUDE_TURNS_THINKING]: 0,
       })
       .lean();

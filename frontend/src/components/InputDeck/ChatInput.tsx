@@ -1,17 +1,19 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { ArrowUp, Image as ImageIcon, Mic } from 'lucide-react';
-import { ImageAttachment } from '../../types/chat';
+import { ImageAttachment, VideoAttachment } from '../../types/chat';
 import { ImagePreview } from './ImagePreview';
+import { VideoPreview } from './VideoPreview';
 import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface ChatInputProps {
-  onSendMessage: (text: string, image?: ImageAttachment) => void;
+  onSendMessage: (text: string, image?: ImageAttachment, video?: VideoAttachment) => void;
   disabled?: boolean;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }) => {
   const [text, setText] = useState('');
   const [stagedImage, setStagedImage] = useState<ImageAttachment | undefined>(undefined);
+  const [stagedVideo, setStagedVideo] = useState<VideoAttachment | undefined>(undefined);
   const [isDragging, setIsDragging] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -37,22 +39,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   };
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (file.size > UI_STRINGS.MAX_FILE_SIZE_BYTES) {
+      alert(UI_STRINGS.ERR_FILE_TOO_LARGE);
+      return;
+    }
 
     const sizeInKB = Math.round(file.size / 1024);
     const sizeFormatted = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
 
-    const reader = new FileReader();
-    reader.onload = (loadEvt) => {
-      const resultUrl = loadEvt.target?.result as string;
-      setStagedImage({
-        id: `img-${Date.now()}`,
-        name: file.name,
-        url: resultUrl,
-        sizeFormatted,
-      });
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith(UI_STRINGS.FILE_PREFIX_IMAGE)) {
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const resultUrl = loadEvt.target?.result as string;
+        setStagedImage({
+          id: `${UI_STRINGS.PREFIX_TURN_IMAGE}${Date.now()}`,
+          name: file.name,
+          url: resultUrl,
+          sizeFormatted,
+        });
+        setStagedVideo(undefined);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type.startsWith(UI_STRINGS.FILE_PREFIX_VIDEO)) {
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const resultUrl = loadEvt.target?.result as string;
+        setStagedVideo({
+          id: `${UI_STRINGS.PREFIX_TURN_VIDEO}${Date.now()}`,
+          name: file.name,
+          url: resultUrl,
+          sizeFormatted,
+          mimeType: file.type || UI_STRINGS.HTTP_MIME_MP4,
+        });
+        setStagedImage(undefined);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -69,7 +91,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (
+      file &&
+      (file.type.startsWith(UI_STRINGS.FILE_PREFIX_IMAGE) ||
+        file.type.startsWith(UI_STRINGS.FILE_PREFIX_VIDEO))
+    ) {
       processFile(file);
     }
   };
@@ -82,17 +108,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   };
 
   const handleSubmit = () => {
-    if ((text.trim() || stagedImage) && !disabled) {
-      onSendMessage(text.trim(), stagedImage);
+    if ((text.trim() || stagedImage || stagedVideo) && !disabled) {
+      onSendMessage(text.trim(), stagedImage, stagedVideo);
       setText('');
       setStagedImage(undefined);
+      setStagedVideo(undefined);
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
     }
   };
 
-  const canSubmit = (text.trim().length > 0 || !!stagedImage) && !disabled;
+  const canSubmit = (text.trim().length > 0 || !!stagedImage || !!stagedVideo) && !disabled;
 
   return (
     <div
@@ -109,11 +136,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
         </div>
       )}
 
-      {/* Hidden File Input for Image Upload */}
+      {/* Hidden File Input for Media Upload */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png, image/jpeg, image/webp, image/gif"
+        accept={UI_STRINGS.ACCEPT_MEDIA_TYPES}
         className="hidden"
         onChange={handleFileChange}
       />
@@ -128,14 +155,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
           />
         )}
 
+        {/* Staged Video Preview Badge */}
+        {stagedVideo && (
+          <VideoPreview
+            video={stagedVideo}
+            onRemove={() => setStagedVideo(undefined)}
+          />
+        )}
+
         {/* Text Input Row */}
         <div className="flex items-end gap-2">
-          {/* Dedicated Image Upload Icon Button */}
+          {/* Dedicated Media Upload Icon Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            title={UI_STRINGS.ATTACH_IMAGE}
-            aria-label={UI_STRINGS.ATTACH_IMAGE}
+            title={UI_STRINGS.ATTACH_MEDIA}
+            aria-label={UI_STRINGS.ATTACH_MEDIA}
             className="w-9 h-9 rounded-full bg-canvas-soft dark:bg-surface-dark border border-hairline dark:border-white/10 text-ink dark:text-on-dark flex items-center justify-center cursor-pointer flex-shrink-0 transition-all duration-150 hover:bg-surface-strong dark:hover:bg-white/10 active:scale-95"
           >
             <ImageIcon size={17} strokeWidth={1.8} />

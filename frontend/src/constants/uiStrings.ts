@@ -21,8 +21,11 @@ export const UI_STRINGS = {
   SEND: 'Analyze',
   SEND_MESSAGE: 'Send message',
   ATTACH_IMAGE: 'Upload crop or leaf photo',
+  ATTACH_VIDEO: 'Upload crop or field video',
+  ATTACH_MEDIA: 'Upload crop photo or field video',
   VOICE_INPUT: 'Dictate field notes',
   REMOVE_IMAGE: 'Remove photo',
+  REMOVE_VIDEO: 'Remove video',
   SEARCH_PLACEHOLDER: 'Search crop diagnostic sessions...',
   INPUT_PLACEHOLDER: 'Ask a question, describe crop symptoms, or upload a leaf photo...',
   COLLAPSE_SIDEBAR: 'Collapse sidebar',
@@ -112,7 +115,8 @@ export const UI_STRINGS = {
   // Footers & Disclaimers
   DISCLAIMER: 'Vistara provides AI-assisted agricultural diagnostics. Cross-verify critical field treatments with local agricultural extension officers.',
   IMAGE_ATTACHED_LABEL: 'Attached crop specimen photo',
-  DRAG_IMAGE_ACTIVE: 'Drop crop or leaf photo here...',
+  VIDEO_ATTACHED_LABEL: 'Attached crop field video',
+  DRAG_IMAGE_ACTIVE: 'Drop crop photo or video here...',
   GENERATING_RESPONSE: 'Generating response...',
 
   // Backend API Endpoints & Error Messages
@@ -142,12 +146,14 @@ export const UI_STRINGS = {
   THINKING_BADGE_STREAMING: 'Analyzing',
   THINKING_BADGE_COMPLETE: 'Thought Process',
   DERIVED_TITLE_LEAF_SCAN: 'Leaf Pathology Diagnostic Scan',
+  DERIVED_TITLE_VIDEO_SCAN: 'Field Video Diagnostic Scan',
   DERIVED_TITLE_CROP_ANALYSIS: 'Crop Symptom Analysis',
 
   // HTTP & MIME Constants
   HTTP_HEADER_CONTENT_TYPE: 'Content-Type',
   HTTP_MIME_JSON: 'application/json',
   HTTP_MIME_JPEG: 'image/jpeg',
+  HTTP_MIME_MP4: 'video/mp4',
   HTTP_RESPONSE_TYPE_TEXT: 'text' as const,
 
   // General Primitives & System Identifiers
@@ -156,6 +162,15 @@ export const UI_STRINGS = {
   EMPTY_STRING: '',
   PATH_SEPARATOR: '/',
   MODEL_ID_QWEN: 'alibaba/qwen3.7-flash',
+  MODEL_ID_MIMO: 'xiaomi/mimo-v2.6-flash',
+
+  // Media & Upload Constraints
+  ACCEPT_MEDIA_TYPES: 'image/png, image/jpeg, image/webp, image/gif, video/mp4, video/quicktime, video/webm',
+  FILE_PREFIX_IMAGE: 'image/',
+  FILE_PREFIX_VIDEO: 'video/',
+  MAX_FILE_SIZE_BYTES: 52428800, // 50 MB
+  ERR_FILE_TOO_LARGE: 'File exceeds maximum upload size (50 MB).',
+  VIDEO_PLAYER_TITLE: 'Field Specimen Video',
 
   // Time & Locale Formatting
   TIME_FORMAT_2_DIGIT: '2-digit' as const,
@@ -164,6 +179,7 @@ export const UI_STRINGS = {
   // Session & Specimen Defaults
   DEFAULT_CONVERSATION_ID: 'conv-1',
   DEFAULT_SPECIMEN_NAME: 'crop_foliage.jpg',
+  DEFAULT_VIDEO_NAME: 'crop_field_video.mp4',
   FRESH_SESSION_SNIPPET: 'Ready for crop health questions or leaf specimen photos...',
   CROP_UNSPECIFIED: 'Unspecified',
 
@@ -172,6 +188,7 @@ export const UI_STRINGS = {
   PREFIX_TURN_USER: 'u-',
   PREFIX_TURN_ASSISTANT: 'a-',
   PREFIX_TURN_IMAGE: 'img-',
+  PREFIX_TURN_VIDEO: 'vid-',
   PREFIX_MSG_USER: 'msg-u-',
   PREFIX_MSG_ASSISTANT: 'msg-a-',
 

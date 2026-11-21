@@ -27,6 +27,16 @@ const imageMetaSchema = new Schema(
   { _id: false }
 );
 
+const videoMetaSchema = new Schema(
+  {
+    [DB_CONSTANTS.FIELD_VIDEO_NAME]: { type: String, required: true },
+    [DB_CONSTANTS.FIELD_VIDEO_MIME_TYPE]: { type: String, required: true },
+    [DB_CONSTANTS.FIELD_VIDEO_SIZE_BYTES]: { type: Number, required: false },
+    [DB_CONSTANTS.FIELD_VIDEO_DURATION]: { type: Number, required: false },
+  },
+  { _id: false }
+);
+
 const chatTurnSchema = new Schema<ChatTurn>(
   {
     [DB_CONSTANTS.FIELD_TURN_ID]: { type: String, required: true },
@@ -34,6 +44,8 @@ const chatTurnSchema = new Schema<ChatTurn>(
     [DB_CONSTANTS.FIELD_COMPLETION]: { type: String, default: SERVER_STRINGS.EMPTY_STRING },
     [DB_CONSTANTS.FIELD_IMAGE_BASE64]: { type: String, required: false },
     [DB_CONSTANTS.FIELD_IMAGE_META]: { type: imageMetaSchema, required: false },
+    [DB_CONSTANTS.FIELD_VIDEO_BASE64]: { type: String, required: false },
+    [DB_CONSTANTS.FIELD_VIDEO_META]: { type: videoMetaSchema, required: false },
     [DB_CONSTANTS.FIELD_THINKING_CONTENT]: { type: String, required: false },
     [DB_CONSTANTS.FIELD_DIAGNOSTIC_DATA]: { type: diagnosticDataSchema, required: false },
     [DB_CONSTANTS.FIELD_TIMESTAMP]: { type: Date, default: Date.now },

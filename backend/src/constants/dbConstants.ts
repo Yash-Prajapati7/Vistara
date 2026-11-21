@@ -36,6 +36,12 @@ export const DB_CONSTANTS = {
   FIELD_IMAGE_NAME: 'name',
   FIELD_IMAGE_MIME_TYPE: 'mimeType',
   FIELD_IMAGE_SIZE_BYTES: 'sizeBytes',
+  FIELD_VIDEO_BASE64: 'videoBase64',
+  FIELD_VIDEO_META: 'videoMeta',
+  FIELD_VIDEO_NAME: 'name',
+  FIELD_VIDEO_MIME_TYPE: 'mimeType',
+  FIELD_VIDEO_SIZE_BYTES: 'sizeBytes',
+  FIELD_VIDEO_DURATION: 'durationSeconds',
   FIELD_THINKING_CONTENT: 'thinkingContent',
   FIELD_DIAGNOSTIC_DATA: 'diagnosticData',
   FIELD_TIMESTAMP: 'timestamp',
@@ -53,6 +59,7 @@ export const DB_CONSTANTS = {
 
   // Projection Keys
   PROJECTION_EXCLUDE_TURNS_IMAGE: 'turns.imageBase64',
+  PROJECTION_EXCLUDE_TURNS_VIDEO: 'turns.videoBase64',
   PROJECTION_EXCLUDE_TURNS_THINKING: 'turns.thinkingContent',
 
   // Sort Directions & Query Operators
@@ -70,6 +77,7 @@ export const DB_CONSTANTS = {
   TITLE_GENERAL_CONSULTATION: 'General Consultation',
   TITLE_AGRONOMIC_CONSULTATION: 'Agronomic Consultation',
   TITLE_LEAF_SPECIMEN_SCAN: 'Leaf Specimen Scan',
+  TITLE_FIELD_VIDEO_SCAN: 'Field Video Diagnostic Scan',
 
   // Connection & Lifecycle Event Strings
   EVENT_CONNECTED: 'connected',

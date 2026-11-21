@@ -10,7 +10,7 @@ import {
   INITIAL_USER_PROFILE,
   SAMPLE_INITIAL_MESSAGES,
 } from './data/mockData';
-import { ChatMessage, ConversationMeta, DiagnosticData, ImageAttachment } from './types/chat';
+import { ChatMessage, ConversationMeta, DiagnosticData, ImageAttachment, VideoAttachment } from './types/chat';
 import { UI_STRINGS } from './constants/uiStrings';
 import { chatService } from './services/chatService';
 
@@ -20,6 +20,8 @@ interface RawTurn {
   completion?: string;
   imageBase64?: string;
   imageMeta?: { name?: string };
+  videoBase64?: string;
+  videoMeta?: { name?: string };
   thinkingContent?: string;
   diagnosticData?: DiagnosticData;
   timestamp?: string;
@@ -48,9 +50,14 @@ const formatTimestamp = (dateInput?: string | Date): string => {
 /**
  * Intelligently derives a clean, context-appropriate title for a chat session.
  * Conversational inquiries (greetings, identity questions) receive "General Consultation".
+ * Video uploads start as "Field Video Diagnostic Scan".
  * Photo uploads start as "Leaf Specimen Scan" until diagnosed.
  */
-export const deriveChatTitle = (prompt: string, hasImage: boolean): string => {
+export const deriveChatTitle = (prompt: string, hasImage: boolean, hasVideo: boolean = false): string => {
+  if (hasVideo) {
+    return UI_STRINGS.DERIVED_TITLE_VIDEO_SCAN;
+  }
+
   if (hasImage) {
     return UI_STRINGS.DERIVED_TITLE_LEAF_SCAN;
   }
@@ -137,6 +144,14 @@ export const App: React.FC = () => {
                       id: `${UI_STRINGS.PREFIX_TURN_IMAGE}${turn.turnId}`,
                       name: turn.imageMeta?.name || UI_STRINGS.DEFAULT_SPECIMEN_NAME,
                       url: turn.imageBase64,
+                      sizeFormatted: UI_STRINGS.EMPTY_STRING,
+                    }
+                  : undefined,
+                videoAttachment: turn.videoBase64
+                  ? {
+                      id: `${UI_STRINGS.PREFIX_TURN_VIDEO}${turn.turnId}`,
+                      name: turn.videoMeta?.name || UI_STRINGS.DEFAULT_VIDEO_NAME,
+                      url: turn.videoBase64,
                       sizeFormatted: UI_STRINGS.EMPTY_STRING,
                     }
                   : undefined,
@@ -313,7 +328,7 @@ export const App: React.FC = () => {
   };
 
   // Send message and trigger assistant response
-  const handleSendMessage = (text: string, image?: ImageAttachment) => {
+  const handleSendMessage = (text: string, image?: ImageAttachment, video?: VideoAttachment) => {
     const userMessageId = `${UI_STRINGS.PREFIX_MSG_USER}${Date.now()}`;
     const timeFormatted = formatTimestamp();
 
@@ -323,11 +338,12 @@ export const App: React.FC = () => {
       content: text,
       timestamp: timeFormatted,
       imageAttachment: image,
+      videoAttachment: video,
     };
 
     // Update conversation title if it's currently generic
     if (activeConversation && (activeConversation.title === UI_STRINGS.DEFAULT_CASE_TITLE || activeMessages.length === 0)) {
-      const derivedTitle = deriveChatTitle(text, Boolean(image));
+      const derivedTitle = deriveChatTitle(text, Boolean(image), Boolean(video));
       handleRenameConversation(activeConversationId, derivedTitle);
     }
 
@@ -361,7 +377,8 @@ export const App: React.FC = () => {
       userId: UI_STRINGS.DEFAULT_USER_ID,
       prompt: text,
       imageAttachment: image,
-      modelId: UI_STRINGS.MODEL_ID_QWEN,
+      videoAttachment: video,
+      modelId: UI_STRINGS.MODEL_ID_MIMO,
       callbacks: {
         onThinkingDelta: (delta: string) => {
           setMessagesMap((prev) => {

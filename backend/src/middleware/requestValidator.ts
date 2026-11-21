@@ -10,10 +10,21 @@ const imageAttachmentSchema = z.object({
   mimeType: z.string().optional(),
 }).optional();
 
+const videoAttachmentSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().default(SERVER_STRINGS.DEFAULT_VIDEO_NAME),
+  url: z.string().optional(),
+  data: z.string().optional(),
+  mimeType: z.string().optional(),
+  sizeBytes: z.number().optional(),
+  durationSeconds: z.number().optional(),
+}).optional();
+
 const chatRequestSchema = z.object({
   sessionId: z.string().optional(),
   prompt: z.string().min(1, SERVER_STRINGS.ERR_MISSING_PROMPT),
   image: imageAttachmentSchema,
+  video: videoAttachmentSchema,
   modelId: z.string().optional(),
 });
 

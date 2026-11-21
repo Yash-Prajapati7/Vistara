@@ -5,7 +5,7 @@ import { contextService } from './contextService.js';
 import { chatHistoryService } from './chatHistoryService.js';
 import { streamPathologyDiagnosis } from './aiService.js';
 import { parseModelResponse } from './responseParser.js';
-import { ImageAttachmentPayload } from '../types/pathology.js';
+import { ImageAttachmentPayload, VideoAttachmentPayload } from '../types/pathology.js';
 import { logger } from '../utils/logger.js';
 
 export interface StreamDiagnosisOptions {
@@ -14,6 +14,7 @@ export interface StreamDiagnosisOptions {
   clientUserId?: string;
   prompt: string;
   image?: ImageAttachmentPayload;
+  video?: VideoAttachmentPayload;
   modelId?: string;
 }
 
@@ -32,6 +33,7 @@ export class ChatDiagnosticService {
     clientUserId,
     prompt,
     image,
+    video,
     modelId,
   }: StreamDiagnosisOptions): Promise<void> {
     const userId = clientUserId || DB_CONSTANTS.DEFAULT_USER_ID;
@@ -40,9 +42,9 @@ export class ChatDiagnosticService {
     const session = contextService.getOrCreateSession(clientSessionId);
     const sessionId = session.sessionId;
 
-    // Persist user turn and image base64 directly into MongoDB chat history
+    // Persist user turn and image/video base64 directly into MongoDB chat history
     try {
-      await chatHistoryService.recordUserTurn(sessionId, userId, prompt, image);
+      await chatHistoryService.recordUserTurn(sessionId, userId, prompt, image, video);
     } catch (dbError: unknown) {
       logger.error('Failed to record user turn in database', dbError);
     }
@@ -65,6 +67,7 @@ export class ChatDiagnosticService {
         sessionId,
         currentPrompt: prompt,
         image,
+        video,
         modelId,
       });
 

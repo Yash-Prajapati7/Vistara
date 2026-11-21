@@ -7,6 +7,14 @@ export interface ImageAttachment {
   sizeFormatted: string;
 }
 
+export interface VideoAttachment {
+  id: string;
+  name: string;
+  url: string; // Object URL or base64
+  sizeFormatted: string;
+  mimeType?: string;
+}
+
 export type SeverityLevel = string;
 export type PathogenCategory = string;
 
@@ -28,6 +36,7 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   imageAttachment?: ImageAttachment;
+  videoAttachment?: VideoAttachment;
   diagnosticData?: DiagnosticData;
   isStreaming?: boolean;
   thinkingContent?: string;

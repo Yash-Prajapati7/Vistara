@@ -25,8 +25,18 @@ export interface DiagnosticImageMeta {
 }
 
 /**
+ * Video metadata associated with a diagnostic query.
+ */
+export interface DiagnosticVideoMeta {
+  name: string;
+  mimeType: string;
+  sizeBytes?: number;
+  durationSeconds?: number;
+}
+
+/**
  * Represents a single turn in a diagnostic conversation.
- * Stores prompt, completion, imageBase64 sent to the LLM, thinking deltas, and diagnostic data.
+ * Stores prompt, completion, imageBase64/videoBase64 sent to the LLM, thinking deltas, and diagnostic data.
  */
 export interface ChatTurn {
   turnId: string;
@@ -34,6 +44,8 @@ export interface ChatTurn {
   completion: string;
   imageBase64?: string;
   imageMeta?: DiagnosticImageMeta;
+  videoBase64?: string;
+  videoMeta?: DiagnosticVideoMeta;
   thinkingContent?: string;
   diagnosticData?: DiagnosticData;
   timestamp: Date;

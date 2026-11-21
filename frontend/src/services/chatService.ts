@@ -1,5 +1,5 @@
 import axios, { AxiosProgressEvent } from 'axios';
-import { DiagnosticData, ImageAttachment } from '../types/chat';
+import { DiagnosticData, ImageAttachment, VideoAttachment } from '../types/chat';
 import { UI_STRINGS } from '../constants/uiStrings';
 
 export interface StreamCallbacks {
@@ -15,6 +15,7 @@ export interface SendMessageParams {
   userId?: string;
   prompt: string;
   imageAttachment?: ImageAttachment;
+  videoAttachment?: VideoAttachment;
   modelId?: string;
   callbacks: StreamCallbacks;
 }
@@ -33,6 +34,7 @@ export class ChatService {
     userId = UI_STRINGS.DEFAULT_USER_ID,
     prompt,
     imageAttachment,
+    videoAttachment,
     modelId,
     callbacks,
   }: SendMessageParams): Promise<void> {
@@ -49,6 +51,14 @@ export class ChatService {
             name: imageAttachment.name,
             data: imageAttachment.url,
             mimeType: UI_STRINGS.HTTP_MIME_JPEG,
+          }
+        : undefined,
+      video: videoAttachment
+        ? {
+            id: videoAttachment.id,
+            name: videoAttachment.name,
+            data: videoAttachment.url,
+            mimeType: videoAttachment.mimeType || UI_STRINGS.HTTP_MIME_MP4,
           }
         : undefined,
     };

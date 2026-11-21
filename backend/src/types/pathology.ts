@@ -26,3 +26,13 @@ export interface ImageAttachmentPayload {
   data?: string; // base64 string or data URL
   mimeType?: string;
 }
+
+export interface VideoAttachmentPayload {
+  id?: string;
+  name: string;
+  url?: string;
+  data?: string; // base64 string or data URL
+  mimeType?: string;
+  sizeBytes?: number;
+  durationSeconds?: number;
+}

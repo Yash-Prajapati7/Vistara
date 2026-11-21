@@ -54,9 +54,17 @@ export const SERVER_STRINGS = {
   // Multimodal Message Content Types
   CONTENT_TYPE_TEXT: 'text',
   CONTENT_TYPE_IMAGE: 'image',
+  CONTENT_TYPE_FILE: 'file',
+
+  // Media MIME Types & Encodings
+  MEDIA_TYPE_VIDEO_MP4: 'video/mp4',
+  MEDIA_TYPE_IMAGE_JPEG: 'image/jpeg',
+  BASE64_DATA_URL_PREFIX_REGEX: /^data:[^;]+;base64,/,
+  BASE64_ENCODING: 'base64' as BufferEncoding,
 
   // Defaults & Server Configuration
   DEFAULT_SPECIMEN_NAME: 'crop_specimen.jpg',
+  DEFAULT_VIDEO_NAME: 'crop_field_video.mp4',
   DEFAULT_BODY_LIMIT: '50mb',
   DEFAULT_PORT: '5000',
   DEFAULT_ORIGIN_VITE: 'http://localhost:5173',

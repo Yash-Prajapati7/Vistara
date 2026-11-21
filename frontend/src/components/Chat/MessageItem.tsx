@@ -13,6 +13,7 @@ import {
   Brain,
   ChevronDown,
   ChevronRight,
+  Video as VideoIcon,
 } from 'lucide-react';
 import { ChatMessage } from '../../types/chat';
 import { UI_STRINGS } from '../../constants/uiStrings';
@@ -180,6 +181,29 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate 
                   {message.imageAttachment.name}
                 </span>
                 <ExternalLink size={12} className="text-muted dark:text-muted-soft" />
+              </div>
+            </div>
+          )}
+
+          {/* Attached Crop Field Video Player (User message) */}
+          {message.videoAttachment && (
+            <div className="relative inline-block rounded-xl overflow-hidden border border-hairline dark:border-white/10 shadow-subtle bg-surface-card dark:bg-surface-dark-elevated max-w-[380px]">
+              <video
+                controls
+                playsInline
+                src={message.videoAttachment.url}
+                className="w-full max-h-[240px] bg-black/90 block object-contain"
+              />
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-white/95 dark:bg-surface-dark-elevated text-[11.5px] text-ink dark:text-on-dark">
+                <div className="flex items-center gap-1.5 truncate max-w-[260px]">
+                  <VideoIcon size={13} className="text-muted dark:text-muted-soft flex-shrink-0" />
+                  <span className="truncate">{message.videoAttachment.name}</span>
+                </div>
+                {message.videoAttachment.sizeFormatted && (
+                  <span className="text-[10px] text-muted dark:text-muted-soft flex-shrink-0">
+                    {message.videoAttachment.sizeFormatted}
+                  </span>
+                )}
               </div>
             </div>
           )}
