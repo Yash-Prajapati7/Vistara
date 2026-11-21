@@ -30,6 +30,13 @@ export interface DiagnosticData {
   preventativeAction: string;
 }
 
+export interface LanguageOption {
+  code: string;
+  name: string;
+  native: string;
+  category: 'indian' | 'international';
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
@@ -41,6 +48,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
   thinkingContent?: string;
   isThinking?: boolean;
+  translationTarget?: string;
 }
 
 export type TimeBucket = 'today' | 'yesterday' | 'previous_week';

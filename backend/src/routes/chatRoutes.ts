@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
-import { validateChatRequest } from '../middleware/requestValidator.js';
+import { validateChatRequest, validateTranslationRequest } from '../middleware/requestValidator.js';
 import { chatDiagnosticService } from '../services/chatDiagnosticService.js';
 import { chatHistoryService } from '../services/chatHistoryService.js';
 import { contextService } from '../services/contextService.js';
@@ -28,6 +28,28 @@ chatRouter.post(
       prompt,
       image,
       video,
+      modelId,
+    });
+  }
+);
+
+/**
+ * POST /api/chat/translate
+ * Streams multilingual translation of an existing diagnostic report targeting alibaba/qwen3.7-flash.
+ * Preserves Markdown report structure and trailing DiagnosticData JSON code blocks.
+ */
+chatRouter.post(
+  SERVER_STRINGS.ROUTE_TRANSLATE,
+  validateTranslationRequest,
+  async (req: Request, res: Response): Promise<void> => {
+    const { sessionId, userId, content, targetLanguage, modelId } = req.body;
+
+    await chatDiagnosticService.streamTranslation({
+      res,
+      clientSessionId: sessionId,
+      clientUserId: userId,
+      content,
+      targetLanguage,
       modelId,
     });
   }

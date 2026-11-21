@@ -28,11 +28,39 @@ const chatRequestSchema = z.object({
   modelId: z.string().optional(),
 });
 
+const translationRequestSchema = z.object({
+  sessionId: z.string().optional(),
+  userId: z.string().optional(),
+  content: z.string().min(1, SERVER_STRINGS.ERR_MISSING_TRANSLATION_PARAMS),
+  targetLanguage: z.string().min(1, SERVER_STRINGS.ERR_MISSING_TRANSLATION_PARAMS),
+  targetLanguageCode: z.string().optional(),
+  modelId: z.string().optional(),
+});
+
 /**
  * Validates incoming chat/diagnostic requests against schema.
  */
 export function validateChatRequest(req: Request, res: Response, next: NextFunction): void {
   const result = chatRequestSchema.safeParse(req.body);
+
+  if (!result.success) {
+    const errorDetails = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    res.status(400).json({
+      error: SERVER_STRINGS.ERR_INVALID_PAYLOAD,
+      details: errorDetails,
+    });
+    return;
+  }
+
+  req.body = result.data;
+  next();
+}
+
+/**
+ * Validates incoming translation requests against schema.
+ */
+export function validateTranslationRequest(req: Request, res: Response, next: NextFunction): void {
+  const result = translationRequestSchema.safeParse(req.body);
 
   if (!result.success) {
     const errorDetails = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');

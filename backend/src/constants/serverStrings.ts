@@ -13,6 +13,7 @@ export const SERVER_STRINGS = {
   ROUTE_ROOT: '/',
   ROUTE_HEALTH: '/api/health',
   ROUTE_CHAT: '/api/chat',
+  ROUTE_TRANSLATE: '/translate',
   ROUTE_SESSION: '/api/chat/session',
   ROUTE_SUB_SESSION: '/session/:id',
   ROUTE_SUB_SESSION_TITLE: '/session/:id/title',
@@ -56,6 +57,13 @@ export const SERVER_STRINGS = {
   CONTENT_TYPE_IMAGE: 'image',
   CONTENT_TYPE_FILE: 'file',
 
+  // Translation & Reasoning Options
+  MODEL_ID_QWEN: 'alibaba/qwen3.7-flash',
+  GATEWAY_OPTION_KEY: 'gateway',
+  REASONING_OPTION_KEY: 'reasoning',
+  REASONING_EFFORT_LOW: 'low',
+  TRANSLATION_USER_PROMPT_PREFIX: 'Translate diagnosis to ',
+
   // Media MIME Types & Encodings
   MEDIA_TYPE_VIDEO_MP4: 'video/mp4',
   MEDIA_TYPE_IMAGE_JPEG: 'image/jpeg',
@@ -84,6 +92,7 @@ export const SERVER_STRINGS = {
   // Error Messages
   ERR_INTERNAL_SERVER: 'Internal server error occurred during diagnostic processing.',
   ERR_MISSING_PROMPT: 'A valid text prompt or disease query is required.',
+  ERR_MISSING_TRANSLATION_PARAMS: 'Content and target language are required for translation.',
   ERR_SESSION_NOT_FOUND: 'Diagnostic session context not found.',
   ERR_INVALID_PAYLOAD: 'Invalid request payload format.',
   ERR_AI_GENERATION_FAILED: 'Failed to generate diagnostic response from vision-language model.',

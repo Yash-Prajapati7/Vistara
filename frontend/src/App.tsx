@@ -494,6 +494,109 @@ export const App: React.FC = () => {
     });
   };
 
+  // Translate a specific assistant message and append the translated response to the chat
+  const handleTranslateMessage = (message: ChatMessage, targetLanguage: string) => {
+    if (isStreaming || !message.content.trim()) return;
+
+    setIsStreaming(true);
+
+    const assistantMessageId = `${UI_STRINGS.PREFIX_MSG_ASSISTANT}${Date.now()}`;
+    const initialAssistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      role: UI_STRINGS.ROLE_ASSISTANT,
+      content: UI_STRINGS.EMPTY_STRING,
+      timestamp: formatTimestamp(),
+      isStreaming: true,
+      thinkingContent: UI_STRINGS.EMPTY_STRING,
+      isThinking: false,
+      translationTarget: targetLanguage,
+    };
+
+    setMessagesMap((prev) => ({
+      ...prev,
+      [activeConversationId]: [...(prev[activeConversationId] || []), initialAssistantMessage],
+    }));
+
+    chatService.streamTranslation({
+      sessionId: activeConversationId,
+      userId: UI_STRINGS.DEFAULT_USER_ID,
+      content: message.content,
+      targetLanguage,
+      callbacks: {
+        onTextDelta: (delta: string) => {
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: msg.content + delta,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onDiagnosticData: (diagnosticData: DiagnosticData, markdownReport: string) => {
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: markdownReport || msg.content,
+                      diagnosticData,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onError: (errorMessage: string) => {
+          setIsStreaming(false);
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: msg.content
+                        ? `${msg.content}\n\n[${UI_STRINGS.DIAGNOSTIC_ALERT_TITLE}: ${errorMessage}]`
+                        : `[${UI_STRINGS.DIAGNOSTIC_SERVICE_NOTICE_TITLE}: ${errorMessage}]`,
+                      isStreaming: false,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+        onComplete: () => {
+          setIsStreaming(false);
+          setMessagesMap((prev) => {
+            const currentList = prev[activeConversationId] || [];
+            return {
+              ...prev,
+              [activeConversationId]: currentList.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      isStreaming: false,
+                    }
+                  : msg
+              ),
+            };
+          });
+        },
+      },
+    });
+  };
+
   const handleSelectPrompt = (promptText: string) => {
     handleSendMessage(promptText);
   };
@@ -533,6 +636,7 @@ export const App: React.FC = () => {
           messages={activeMessages}
           isStreaming={isStreaming}
           onSelectPrompt={handleSelectPrompt}
+          onTranslate={handleTranslateMessage}
           onRegenerateLast={() => {
             if (activeMessages.length > 0) {
               const lastUserMsg = [...activeMessages].reverse().find((m) => m.role === UI_STRINGS.ROLE_USER);

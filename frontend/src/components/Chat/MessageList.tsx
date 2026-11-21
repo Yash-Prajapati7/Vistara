@@ -8,6 +8,7 @@ interface MessageListProps {
   isStreaming: boolean;
   onSelectPrompt: (promptText: string) => void;
   onRegenerateLast?: () => void;
+  onTranslate?: (message: ChatMessage, targetLanguage: string) => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -15,6 +16,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   isStreaming,
   onSelectPrompt,
   onRegenerateLast,
+  onTranslate,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +42,11 @@ export const MessageList: React.FC<MessageListProps> = ({
             onRegenerate={
               idx === messages.length - 1 && msg.role === 'assistant'
                 ? onRegenerateLast
+                : undefined
+            }
+            onTranslate={
+              msg.role === 'assistant' && onTranslate
+                ? (targetLanguage) => onTranslate(msg, targetLanguage)
                 : undefined
             }
           />

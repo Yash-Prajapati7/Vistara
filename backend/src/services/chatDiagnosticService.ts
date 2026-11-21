@@ -3,7 +3,7 @@ import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { contextService } from './contextService.js';
 import { chatHistoryService } from './chatHistoryService.js';
-import { streamPathologyDiagnosis } from './aiService.js';
+import { streamPathologyDiagnosis, streamPathologyTranslation } from './aiService.js';
 import { parseModelResponse } from './responseParser.js';
 import { ImageAttachmentPayload, VideoAttachmentPayload } from '../types/pathology.js';
 import { logger } from '../utils/logger.js';
@@ -15,6 +15,15 @@ export interface StreamDiagnosisOptions {
   prompt: string;
   image?: ImageAttachmentPayload;
   video?: VideoAttachmentPayload;
+  modelId?: string;
+}
+
+export interface StreamTranslationOptions {
+  res: Response;
+  clientSessionId?: string;
+  clientUserId?: string;
+  content: string;
+  targetLanguage: string;
   modelId?: string;
 }
 
@@ -188,6 +197,119 @@ export class ChatDiagnosticService {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : SERVER_STRINGS.ERR_AI_GENERATION_FAILED;
       logger.error('Diagnostic streaming pipeline failed', error);
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: SERVER_STRINGS.ERR_AI_GENERATION_FAILED,
+          message: errorMessage,
+        });
+        return;
+      }
+
+      res.write(
+        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
+          type: SERVER_STRINGS.EVENT_ERROR,
+          error: errorMessage,
+        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
+      );
+      res.end();
+    }
+  }
+
+  /**
+   * Orchestrates streaming multilingual translation targeting alibaba/qwen3.7-flash:
+   * 1. Records a synthetic user prompt in MongoDB chat history
+   * 2. SSE streaming text deltas to client
+   * 3. Response parsing for structured diagnostic card retention
+   * 4. Completion persistence in MongoDB
+   */
+  public async streamTranslation({
+    res,
+    clientSessionId,
+    clientUserId,
+    content,
+    targetLanguage,
+    modelId,
+  }: StreamTranslationOptions): Promise<void> {
+    const userId = clientUserId || DB_CONSTANTS.DEFAULT_USER_ID;
+    const session = contextService.getOrCreateSession(clientSessionId);
+    const sessionId = session.sessionId;
+
+    // Record synthetic translation request turn in MongoDB chat history
+    const userPrompt = `${SERVER_STRINGS.TRANSLATION_USER_PROMPT_PREFIX}${targetLanguage}`;
+    try {
+      await chatHistoryService.recordUserTurn(sessionId, userId, userPrompt);
+    } catch (dbError: unknown) {
+      logger.error('Failed to record translation user turn in database', dbError);
+    }
+
+    res.setHeader(SERVER_STRINGS.HEADER_CONTENT_TYPE, SERVER_STRINGS.MIME_EVENT_STREAM);
+    res.setHeader(SERVER_STRINGS.HEADER_CACHE_CONTROL, SERVER_STRINGS.CACHE_NO_CACHE);
+    res.setHeader(SERVER_STRINGS.HEADER_CONNECTION, SERVER_STRINGS.CONNECTION_KEEP_ALIVE);
+
+    if (typeof res.flushHeaders === SERVER_STRINGS.TYPEOF_FUNCTION) {
+      res.flushHeaders();
+    }
+
+    let fullResponseText = '';
+
+    try {
+      const streamResult = await streamPathologyTranslation({
+        content,
+        targetLanguage,
+        modelId,
+      });
+
+      for await (const part of streamResult.fullStream) {
+        if (part.type === SERVER_STRINGS.EVENT_TEXT_DELTA) {
+          fullResponseText += part.text;
+          res.write(
+            `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
+              type: SERVER_STRINGS.EVENT_TEXT_DELTA,
+              text: part.text,
+            })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
+          );
+        }
+      }
+
+      // Parse translated response to extract structured DiagnosticData if present
+      const { markdownReport, diagnosticData } = parseModelResponse(fullResponseText);
+
+      // Persist completion and structured diagnosis into MongoDB
+      try {
+        await chatHistoryService.recordCompletion(
+          sessionId,
+          markdownReport || fullResponseText,
+          diagnosticData,
+          SERVER_STRINGS.EMPTY_STRING
+        );
+      } catch (dbSaveError: unknown) {
+        logger.error('Failed to persist translated completion to MongoDB', dbSaveError);
+      }
+
+      // Emit diagnostic data event if structured card is present
+      if (diagnosticData) {
+        res.write(
+          `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
+            type: SERVER_STRINGS.EVENT_DIAGNOSTIC_DATA,
+            diagnosticData,
+            markdownReport,
+            sessionId,
+          })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
+        );
+      }
+
+      res.write(
+        `${SERVER_STRINGS.SSE_DATA_PREFIX}${JSON.stringify({
+          type: SERVER_STRINGS.EVENT_DONE,
+          sessionId,
+        })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
+      );
+      res.end();
+      logger.info('Completed diagnostic translation streaming', { sessionId, targetLanguage });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : SERVER_STRINGS.ERR_AI_GENERATION_FAILED;
+      logger.error('Translation streaming failed', error);
 
       if (!res.headersSent) {
         res.status(500).json({

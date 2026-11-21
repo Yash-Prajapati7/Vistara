@@ -20,6 +20,16 @@ export interface SendMessageParams {
   callbacks: StreamCallbacks;
 }
 
+export interface SendTranslationParams {
+  sessionId: string;
+  userId?: string;
+  content: string;
+  targetLanguage: string;
+  targetLanguageCode?: string;
+  modelId?: string;
+  callbacks: StreamCallbacks;
+}
+
 /**
  * Service managing communication with the Vistara vision-language backend via Axios.
  * Adheres strictly to the Centralized String Constants Policy from .agents/agents.md.
@@ -181,6 +191,90 @@ export class ChatService {
   public async checkHealth() {
     const response = await axios.get(UI_STRINGS.API_HEALTH_ENDPOINT);
     return response.data;
+  }
+
+  /**
+   * Streams multilingual translation of an existing diagnostic report using alibaba/qwen3.7-flash.
+   */
+  public async streamTranslation({
+    sessionId,
+    userId = UI_STRINGS.DEFAULT_USER_ID,
+    content,
+    targetLanguage,
+    targetLanguageCode,
+    modelId,
+    callbacks,
+  }: SendTranslationParams): Promise<void> {
+    let lastProcessedIndex = 0;
+
+    const payload = {
+      sessionId,
+      userId,
+      content,
+      targetLanguage,
+      targetLanguageCode,
+      modelId,
+    };
+
+    try {
+      await axios.post(UI_STRINGS.API_TRANSLATE_ENDPOINT, payload, {
+        headers: {
+          [UI_STRINGS.HTTP_HEADER_CONTENT_TYPE]: UI_STRINGS.HTTP_MIME_JSON,
+        },
+        responseType: UI_STRINGS.HTTP_RESPONSE_TYPE_TEXT,
+        onDownloadProgress: (progressEvent: AxiosProgressEvent) => {
+          const xhr = progressEvent.event?.target as XMLHttpRequest | undefined;
+          const currentText = xhr
+            ? xhr.responseText
+            : (progressEvent as unknown as { responseText?: string }).responseText || UI_STRINGS.EMPTY_STRING;
+
+          if (!currentText || currentText.length <= lastProcessedIndex) {
+            return;
+          }
+
+          const newChunk = currentText.slice(lastProcessedIndex);
+          lastProcessedIndex = currentText.length;
+
+          const lines = newChunk.split(UI_STRINGS.NEWLINE_SEPARATOR);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith(UI_STRINGS.SSE_DATA_PREFIX)) {
+              const jsonStr = trimmed.slice(UI_STRINGS.SSE_DATA_PREFIX.length);
+              try {
+                const event = JSON.parse(jsonStr);
+
+                if (event.type === UI_STRINGS.SSE_EVENT_TEXT_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
+                  callbacks.onTextDelta(event.text);
+                } else if (event.type === UI_STRINGS.SSE_EVENT_DIAGNOSTIC_DATA && event.diagnosticData) {
+                  callbacks.onDiagnosticData(event.diagnosticData, event.markdownReport || UI_STRINGS.EMPTY_STRING);
+                } else if (event.type === UI_STRINGS.SSE_EVENT_DONE) {
+                  callbacks.onComplete();
+                } else if (event.type === UI_STRINGS.SSE_EVENT_ERROR) {
+                  callbacks.onError(event.error || UI_STRINGS.API_STREAM_ERROR);
+                }
+              } catch {
+                // Incomplete JSON chunk across network boundaries
+              }
+            }
+          }
+        },
+      });
+
+      callbacks.onComplete();
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const errorMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          UI_STRINGS.API_ERROR_NETWORK;
+        callbacks.onError(errorMsg);
+      } else if (error instanceof Error) {
+        callbacks.onError(error.message);
+      } else {
+        callbacks.onError(UI_STRINGS.API_ERROR_NETWORK);
+      }
+    }
   }
 }
 

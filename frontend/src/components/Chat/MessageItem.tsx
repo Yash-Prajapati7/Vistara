@@ -14,20 +14,24 @@ import {
   ChevronDown,
   ChevronRight,
   Video as VideoIcon,
+  Languages as LanguagesIcon,
 } from 'lucide-react';
 import { ChatMessage } from '../../types/chat';
 import { UI_STRINGS } from '../../constants/uiStrings';
+import { TranslationDropdown } from './TranslationDropdown';
 
 interface MessageItemProps {
   message: ChatMessage;
   onRegenerate?: () => void;
+  onTranslate?: (targetLanguage: string) => void;
 }
 
-export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate }) => {
+export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate, onTranslate }) => {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<typeof UI_STRINGS.FEEDBACK_UP | typeof UI_STRINGS.FEEDBACK_DOWN | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [userToggledThinking, setUserToggledThinking] = useState<boolean | null>(null);
+  const [isTranslationOpen, setIsTranslationOpen] = useState(false);
 
   const isUser = message.role === UI_STRINGS.ROLE_USER;
   const hasThinking = Boolean(message.thinkingContent || message.isThinking);
@@ -163,6 +167,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate 
               {isUser ? UI_STRINGS.USER_ROLE_LABEL : UI_STRINGS.BRAND_NAME}
             </span>
             <span>{message.timestamp}</span>
+            {message.translationTarget && (
+              <span className="badge-pill text-[10px] py-0 px-1.5 bg-primary/5 dark:bg-white/10 text-primary dark:text-on-dark border-transparent font-medium">
+                {UI_STRINGS.TRANSLATED_TO_PREFIX}{message.translationTarget}
+              </span>
+            )}
           </div>
 
           {/* Attached Crop Foliage Image Preview (User message) */}
@@ -377,6 +386,35 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate 
                   <RotateCcw size={13} />
                   <span>{UI_STRINGS.REGENERATE}</span>
                 </button>
+              )}
+
+              {/* Multilingual Translation Button with Dropdown Popover */}
+              {onTranslate && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsTranslationOpen(!isTranslationOpen)}
+                    title={UI_STRINGS.TRANSLATE}
+                    aria-label={UI_STRINGS.TRANSLATE}
+                    className={`flex items-center gap-1 text-xs cursor-pointer py-1 px-1.5 rounded transition-colors ${
+                      isTranslationOpen
+                        ? 'bg-surface-strong dark:bg-white/10 text-ink dark:text-on-dark font-medium'
+                        : 'text-muted dark:text-muted-soft hover:text-ink dark:hover:text-on-dark'
+                    }`}
+                  >
+                    <LanguagesIcon size={13} />
+                    <span>{UI_STRINGS.TRANSLATE}</span>
+                  </button>
+
+                  <TranslationDropdown
+                    isOpen={isTranslationOpen}
+                    onClose={() => setIsTranslationOpen(false)}
+                    onSelectLanguage={(langName) => {
+                      setIsTranslationOpen(false);
+                      onTranslate(langName);
+                    }}
+                  />
+                </div>
               )}
 
               <div className="h-3 w-[1px] bg-hairline dark:bg-white/10 mx-0.5" />

@@ -1,6 +1,7 @@
 import { streamText } from 'ai';
 import { VISTARA_PATHOLOGY_SYSTEM_PROMPT, buildPathologyUserPrompt } from '../prompts/leafAnalysis.prompt.js';
 import { VISTARA_VIDEO_PATHOLOGY_SYSTEM_PROMPT, buildVideoPathologyUserPrompt } from '../prompts/videoAnalysis.prompt.js';
+import { VISTARA_TRANSLATION_SYSTEM_PROMPT, buildTranslationUserPrompt } from '../prompts/translation.prompt.js';
 import { contextService } from './contextService.js';
 import { MODEL_CONFIG } from '../constants/modelConfig.js';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
@@ -12,6 +13,12 @@ export interface PathologyStreamRequest {
   currentPrompt: string;
   image?: ImageAttachmentPayload;
   video?: VideoAttachmentPayload;
+  modelId?: string;
+}
+
+export interface TranslationStreamRequest {
+  content: string;
+  targetLanguage: string;
   modelId?: string;
 }
 
@@ -107,6 +114,46 @@ export async function streamPathologyDiagnosis({
     ],
     temperature: MODEL_CONFIG.TEMPERATURE,
     maxOutputTokens: MODEL_CONFIG.MAX_TOKENS,
+  });
+
+  return streamResult;
+}
+
+/**
+ * Streams multilingual translation targeting alibaba/qwen3.7-flash with low reasoning effort.
+ * Preserves Markdown report structure and trailing DiagnosticData JSON schema.
+ */
+export async function streamPathologyTranslation({
+  content,
+  targetLanguage,
+  modelId,
+}: TranslationStreamRequest) {
+  const targetModel = modelId || MODEL_CONFIG.TRANSLATION_MODEL_ID;
+
+  logger.info('Initiating multilingual diagnostic translation stream', {
+    targetModel,
+    targetLanguage,
+    contentLength: content.length,
+  });
+
+  const prompt = buildTranslationUserPrompt(content, targetLanguage);
+
+  const streamResult = streamText({
+    model: targetModel as unknown as Parameters<typeof streamText>[0]['model'],
+    system: VISTARA_TRANSLATION_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: SERVER_STRINGS.ROLE_USER,
+        content: prompt,
+      },
+    ],
+    temperature: MODEL_CONFIG.TRANSLATION_TEMPERATURE,
+    maxOutputTokens: MODEL_CONFIG.TRANSLATION_MAX_TOKENS,
+    providerOptions: {
+      [SERVER_STRINGS.GATEWAY_OPTION_KEY]: {
+        [SERVER_STRINGS.REASONING_OPTION_KEY]: MODEL_CONFIG.TRANSLATION_REASONING_EFFORT,
+      },
+    },
   });
 
   return streamResult;

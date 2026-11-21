@@ -35,6 +35,14 @@ export const UI_STRINGS = {
   COPY: 'Copy report',
   COPIED: 'Copied to clipboard!',
   REGENERATE: 'Re-analyze symptoms',
+  TRANSLATE: 'Translate',
+  TRANSLATE_DROPDOWN_TITLE: 'Translate to',
+  CATEGORY_INDIAN_LANGUAGES: 'Indian Languages',
+  CATEGORY_INTERNATIONAL_LANGUAGES: 'International Languages',
+  LANG_CATEGORY_INDIAN: 'indian',
+  LANG_CATEGORY_INTERNATIONAL: 'international',
+  TRANSLATING_IN_PROGRESS: 'Translating report...',
+  TRANSLATED_TO_PREFIX: 'Translated to ',
   THUMBS_UP: 'Accurate diagnosis',
   THUMBS_DOWN: 'Inaccurate diagnosis',
   RENAME: 'Rename case',
@@ -64,6 +72,8 @@ export const UI_STRINGS = {
   STATUS_ON: 'ON',
   STATUS_OFF: 'OFF',
   EVENT_MOUSEDOWN: 'mousedown',
+  EVENT_KEYDOWN: 'keydown',
+  KEY_ESCAPE: 'Escape',
   THEME_CONTEXT_ERROR: 'useTheme must be used within a ThemeProvider',
 
   // User Roles & Message Roles
@@ -121,6 +131,7 @@ export const UI_STRINGS = {
 
   // Backend API Endpoints & Error Messages
   API_CHAT_ENDPOINT: '/api/chat',
+  API_TRANSLATE_ENDPOINT: '/api/chat/translate',
   API_HEALTH_ENDPOINT: '/api/health',
   API_SESSION_ENDPOINT: '/api/chat/session',
   API_USER_CHATS_ENDPOINT: '/api/chat/user',
@@ -198,3 +209,23 @@ export const UI_STRINGS = {
   DIAGNOSTIC_STREAM_INTERRUPTED_LABEL: 'Diagnostic stream interrupted',
   BACKEND_START_INSTRUCTIONS: 'Please ensure the Vistara backend is running on port 5000 and AI_GATEWAY_API_KEY is configured in backend/.env.',
 } as const;
+
+export const SUPPORTED_LANGUAGES = [
+  // Indian Regional Languages
+  { code: 'hi', name: 'Hindi', native: 'हिन्दी', category: 'indian' as const },
+  { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી', category: 'indian' as const },
+  { code: 'mr', name: 'Marathi', native: 'मराठी', category: 'indian' as const },
+  { code: 'bn', name: 'Bengali', native: 'বাংলা', category: 'indian' as const },
+  { code: 'te', name: 'Telugu', native: 'తెలుగు', category: 'indian' as const },
+  { code: 'ta', name: 'Tamil', native: 'தமிழ்', category: 'indian' as const },
+  { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ', category: 'indian' as const },
+  { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ', category: 'indian' as const },
+
+  // International Languages
+  { code: 'es', name: 'Spanish', native: 'Español', category: 'international' as const },
+  { code: 'fr', name: 'French', native: 'Français', category: 'international' as const },
+  { code: 'de', name: 'German', native: 'Deutsch', category: 'international' as const },
+  { code: 'ar', name: 'Arabic', native: 'العربية', category: 'international' as const },
+  { code: 'ja', name: 'Japanese', native: '日本語', category: 'international' as const },
+  { code: 'pt', name: 'Portuguese', native: 'Português', category: 'international' as const },
+] as const;
