@@ -82,7 +82,7 @@ export class ChatDiagnosticService {
       let isInsideThinkTag = false;
 
       // Stream full parts (reasoning deltas and text deltas) to client as they are generated
-      for await (const part of streamResult.fullStream) {
+      for await (const part of streamResult.stream) {
         if (part.type === SERVER_STRINGS.EVENT_REASONING_DELTA) {
           fullThinkingText += part.text;
           res.write(
@@ -257,7 +257,7 @@ export class ChatDiagnosticService {
         targetLanguage,
       });
 
-      for await (const part of streamResult.fullStream) {
+      for await (const part of streamResult.stream) {
         if (part.type === SERVER_STRINGS.EVENT_TEXT_DELTA) {
           fullResponseText += part.text;
           res.write(
