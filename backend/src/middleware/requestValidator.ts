@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
+import { ALLOWED_MODEL_IDS } from '../constants/modelConfig.js';
 
 const imageAttachmentSchema = z.object({
   id: z.string().optional(),
@@ -22,10 +23,13 @@ const videoAttachmentSchema = z.object({
 
 const chatRequestSchema = z.object({
   sessionId: z.string().optional(),
+  userId: z.string().optional(),
   prompt: z.string().min(1, SERVER_STRINGS.ERR_MISSING_PROMPT),
   image: imageAttachmentSchema,
   video: videoAttachmentSchema,
-  modelId: z.string().optional(),
+  modelId: z.enum(ALLOWED_MODEL_IDS, {
+    errorMap: () => ({ message: SERVER_STRINGS.ERR_INVALID_MODEL_ID }),
+  }).optional(),
 });
 
 const translationRequestSchema = z.object({

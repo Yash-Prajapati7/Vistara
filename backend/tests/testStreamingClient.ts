@@ -41,6 +41,9 @@ async function runTestSuite() {
 \`\`\``;
 
   const parsed = parseModelResponse(sampleModelOutput);
+  if (!parsed.diagnosticData) {
+    throw new Error('Expected parseModelResponse to extract diagnosticData, but received null');
+  }
   if (!parsed.diagnosticData.crop.includes('Tomato')) {
     throw new Error(`Crop mismatch in parser: ${parsed.diagnosticData.crop}`);
   }
@@ -108,10 +111,14 @@ async function runTestSuite() {
   // Test 3: Express HTTP Server & Endpoints (Health, Session, Chat Validation)
   console.log('[TEST 3] Testing Express App endpoints...');
   const app = createApp();
-  const testPort = 5099;
+  let testPort = 0;
 
   const server = await new Promise<import('http').Server>((resolve) => {
-    const s = app.listen(testPort, () => resolve(s));
+    const s = app.listen(0, () => {
+      const addr = s.address() as import('net').AddressInfo;
+      testPort = addr.port;
+      resolve(s);
+    });
   });
 
   try {
@@ -148,7 +155,25 @@ async function runTestSuite() {
     }
     console.log('PASS: POST /api/chat rejected empty prompt with 400.');
 
-    // 3D: Session Deletion Endpoint
+    // 3D: Chat Payload Validation (Unauthorized Model ID Rejection - SEV-3)
+    const invalidModelRes = await fetch(`http://localhost:${testPort}${SERVER_STRINGS.ROUTE_CHAT}`, {
+      method: 'POST',
+      headers: { [SERVER_STRINGS.HEADER_CONTENT_TYPE]: SERVER_STRINGS.MIME_APPLICATION_JSON },
+      body: JSON.stringify({
+        prompt: 'Diagnose crop foliage',
+        modelId: 'unauthorized/arbitrary-expensive-model',
+      }),
+    });
+    if (invalidModelRes.status !== 400) {
+      throw new Error(`Expected 400 for unauthorized modelId, got: ${invalidModelRes.status}`);
+    }
+    const invalidModelJson = (await invalidModelRes.json()) as { error: string; details: string };
+    if (!invalidModelJson.details || !invalidModelJson.details.includes('modelId')) {
+      throw new Error(`Expected validation error details for modelId, got: ${JSON.stringify(invalidModelJson)}`);
+    }
+    console.log('PASS: POST /api/chat rejected unauthorized modelId with 400 and validation message.');
+
+    // 3E: Session Deletion Endpoint
     const deleteRes = await fetch(`http://localhost:${testPort}${SERVER_STRINGS.ROUTE_SESSION}/${testSessionId}`, {
       method: 'DELETE',
     });

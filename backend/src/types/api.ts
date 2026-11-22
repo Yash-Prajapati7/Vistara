@@ -1,4 +1,5 @@
 import { DiagnosticData, ImageAttachmentPayload } from './pathology.js';
+import { SupportedModelId } from '../constants/modelConfig.js';
 
 /**
  * API request and response payload types for Vistara.
@@ -8,7 +9,7 @@ export interface ChatRequestBody {
   userId?: string;
   prompt: string;
   image?: ImageAttachmentPayload;
-  modelId?: string;
+  modelId?: SupportedModelId;
 }
 
 export interface HealthResponsePayload {

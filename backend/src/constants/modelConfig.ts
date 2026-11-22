@@ -27,3 +27,10 @@ export const MODEL_CONFIG = {
   DEFAULT_SEVERITY: 'Moderate',
   DEFAULT_PATHOGEN_TYPE: 'Unspecified Pathogen',
 } as const;
+
+export const ALLOWED_MODEL_IDS = [
+  MODEL_CONFIG.DEFAULT_MODEL_ID,
+  MODEL_CONFIG.TRANSLATION_MODEL_ID,
+] as const;
+
+export type SupportedModelId = (typeof ALLOWED_MODEL_IDS)[number];

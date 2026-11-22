@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { validateChatRequest, validateTranslationRequest } from '../middleware/requestValidator.js';
@@ -163,8 +164,10 @@ chatRouter.delete(
     const userId = rawUserId ? String(rawUserId) : undefined;
 
     try {
-      // Delete from MongoDB persistent collection
-      const dbDeleted = await chatHistoryService.deleteSession(sessionId, userId);
+      // Delete from MongoDB persistent collection if connected
+      const dbDeleted = mongoose.connection.readyState === 1
+        ? await chatHistoryService.deleteSession(sessionId, userId)
+        : false;
 
       // Clear memory context as well
       const memDeleted = contextService.deleteSession(sessionId);

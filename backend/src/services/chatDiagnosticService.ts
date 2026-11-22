@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { contextService } from './contextService.js';
@@ -331,21 +332,29 @@ export class ChatDiagnosticService {
    * falling back to in-memory context store.
    */
   public async getSessionDetails(sessionId: string) {
-    const fullChat = await chatHistoryService.getFullSession(sessionId);
-    if (fullChat) {
-      const lastTurn = fullChat.turns[fullChat.turns.length - 1];
-      return {
-        sessionId: fullChat.sessionId,
-        userId: fullChat.userId,
-        title: fullChat.title,
-        cropType: fullChat.cropType,
-        turns: fullChat.turns,
-        prompts: fullChat.turns.map((t) => t.prompt),
-        hasLastResponse: Boolean(lastTurn?.completion),
-        lastDiagnosticData: lastTurn?.diagnosticData || null,
-        createdAt: fullChat.createdAt ? new Date(fullChat.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: fullChat.updatedAt ? new Date(fullChat.updatedAt).toISOString() : new Date().toISOString(),
-      };
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const fullChat = await chatHistoryService.getFullSession(sessionId);
+        if (fullChat) {
+          const lastTurn = fullChat.turns[fullChat.turns.length - 1];
+          return {
+            sessionId: fullChat.sessionId,
+            userId: fullChat.userId,
+            title: fullChat.title,
+            cropType: fullChat.cropType,
+            turns: fullChat.turns,
+            prompts: fullChat.turns.map((t) => t.prompt),
+            hasLastResponse: Boolean(lastTurn?.completion),
+            lastDiagnosticData: lastTurn?.diagnosticData || null,
+            createdAt: fullChat.createdAt ? new Date(fullChat.createdAt).toISOString() : new Date().toISOString(),
+            updatedAt: fullChat.updatedAt ? new Date(fullChat.updatedAt).toISOString() : new Date().toISOString(),
+          };
+        }
+      } catch (dbError) {
+        logger.warn('Failed to query database for session details, checking context store', {
+          error: dbError instanceof Error ? dbError.message : String(dbError),
+        });
+      }
     }
 
     const session = contextService.getSession(sessionId);

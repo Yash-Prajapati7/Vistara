@@ -92,6 +92,7 @@ export const SERVER_STRINGS = {
   // Error Messages
   ERR_INTERNAL_SERVER: 'Internal server error occurred during diagnostic processing.',
   ERR_MISSING_PROMPT: 'A valid text prompt or disease query is required.',
+  ERR_INVALID_MODEL_ID: 'Selected model ID is not supported. Permitted models are: xiaomi/mimo-v2.6-flash, alibaba/qwen3.7-flash.',
   ERR_MISSING_TRANSLATION_PARAMS: 'Content and target language are required for translation.',
   ERR_SESSION_NOT_FOUND: 'Diagnostic session context not found.',
   ERR_INVALID_PAYLOAD: 'Invalid request payload format.',
