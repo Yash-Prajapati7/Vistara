@@ -34,7 +34,6 @@ const translationRequestSchema = z.object({
   content: z.string().min(1, SERVER_STRINGS.ERR_MISSING_TRANSLATION_PARAMS),
   targetLanguage: z.string().min(1, SERVER_STRINGS.ERR_MISSING_TRANSLATION_PARAMS),
   targetLanguageCode: z.string().optional(),
-  modelId: z.string().optional(),
 });
 
 /**

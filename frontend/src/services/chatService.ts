@@ -26,7 +26,6 @@ export interface SendTranslationParams {
   content: string;
   targetLanguage: string;
   targetLanguageCode?: string;
-  modelId?: string;
   callbacks: StreamCallbacks;
 }
 
@@ -194,7 +193,7 @@ export class ChatService {
   }
 
   /**
-   * Streams multilingual translation of an existing diagnostic report using alibaba/qwen3.7-flash.
+   * Streams multilingual translation of an existing diagnostic report.
    */
   public async streamTranslation({
     sessionId,
@@ -202,7 +201,6 @@ export class ChatService {
     content,
     targetLanguage,
     targetLanguageCode,
-    modelId,
     callbacks,
   }: SendTranslationParams): Promise<void> {
     let lastProcessedIndex = 0;
@@ -213,7 +211,6 @@ export class ChatService {
       content,
       targetLanguage,
       targetLanguageCode,
-      modelId,
     };
 
     try {

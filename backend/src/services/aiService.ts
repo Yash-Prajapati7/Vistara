@@ -19,7 +19,6 @@ export interface PathologyStreamRequest {
 export interface TranslationStreamRequest {
   content: string;
   targetLanguage: string;
-  modelId?: string;
 }
 
 /**
@@ -126,9 +125,8 @@ export async function streamPathologyDiagnosis({
 export async function streamPathologyTranslation({
   content,
   targetLanguage,
-  modelId,
 }: TranslationStreamRequest) {
-  const targetModel = modelId || MODEL_CONFIG.TRANSLATION_MODEL_ID;
+  const targetModel = MODEL_CONFIG.TRANSLATION_MODEL_ID;
 
   logger.info('Initiating multilingual diagnostic translation stream', {
     targetModel,

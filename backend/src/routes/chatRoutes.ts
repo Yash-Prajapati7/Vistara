@@ -42,7 +42,7 @@ chatRouter.post(
   SERVER_STRINGS.ROUTE_TRANSLATE,
   validateTranslationRequest,
   async (req: Request, res: Response): Promise<void> => {
-    const { sessionId, userId, content, targetLanguage, modelId } = req.body;
+    const { sessionId, userId, content, targetLanguage } = req.body;
 
     await chatDiagnosticService.streamTranslation({
       res,
@@ -50,7 +50,6 @@ chatRouter.post(
       clientUserId: userId,
       content,
       targetLanguage,
-      modelId,
     });
   }
 );

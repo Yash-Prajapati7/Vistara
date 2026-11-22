@@ -24,7 +24,6 @@ export interface StreamTranslationOptions {
   clientUserId?: string;
   content: string;
   targetLanguage: string;
-  modelId?: string;
 }
 
 export class ChatDiagnosticService {
@@ -67,8 +66,8 @@ export class ChatDiagnosticService {
       res.flushHeaders();
     }
 
-    let fullResponseText = '';
-    let fullThinkingText = '';
+    let fullResponseText = SERVER_STRINGS.EMPTY_STRING;
+    let fullThinkingText = SERVER_STRINGS.EMPTY_STRING;
 
     try {
       // Execute vision-language streaming pipeline with context understanding
@@ -108,7 +107,7 @@ export class ChatDiagnosticService {
                 })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
               );
             }
-            text = parts[1] || '';
+            text = parts[1] || SERVER_STRINGS.EMPTY_STRING;
           }
 
           if (isInsideThinkTag) {
@@ -217,7 +216,7 @@ export class ChatDiagnosticService {
   }
 
   /**
-   * Orchestrates streaming multilingual translation targeting alibaba/qwen3.7-flash:
+   * Orchestrates streaming multilingual translation:
    * 1. Records a synthetic user prompt in MongoDB chat history
    * 2. SSE streaming text deltas to client
    * 3. Response parsing for structured diagnostic card retention
@@ -229,7 +228,6 @@ export class ChatDiagnosticService {
     clientUserId,
     content,
     targetLanguage,
-    modelId,
   }: StreamTranslationOptions): Promise<void> {
     const userId = clientUserId || DB_CONSTANTS.DEFAULT_USER_ID;
     const session = contextService.getOrCreateSession(clientSessionId);
@@ -251,13 +249,12 @@ export class ChatDiagnosticService {
       res.flushHeaders();
     }
 
-    let fullResponseText = '';
+    let fullResponseText = SERVER_STRINGS.EMPTY_STRING;
 
     try {
       const streamResult = await streamPathologyTranslation({
         content,
         targetLanguage,
-        modelId,
       });
 
       for await (const part of streamResult.fullStream) {
