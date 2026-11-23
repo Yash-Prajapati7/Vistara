@@ -64,6 +64,10 @@ export default {
         popover: '0 12px 36px rgba(0, 0, 0, 0.08)',
       },
       keyframes: {
+        sway: {
+          '0%, 100%': { transform: 'rotate(-1.5deg) translateY(0px)' },
+          '50%': { transform: 'rotate(2deg) translateY(-4px)' },
+        },
         orbDrift: {
           '0%': { transform: 'translate(0, 0) scale(1)' },
           '50%': { transform: 'translate(30px, -20px) scale(1.08)' },
@@ -75,6 +79,7 @@ export default {
         },
       },
       animation: {
+        'gentle-sway': 'sway 7s ease-in-out infinite',
         'orb-drift': 'orbDrift 20s infinite alternate ease-in-out',
         'fade-in': 'fadeIn 0.18s ease-out forwards',
         'spin-slow': 'spin 3s linear infinite',

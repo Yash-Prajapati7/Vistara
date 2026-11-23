@@ -1,4 +1,4 @@
-import { ConversationMeta, SuggestionPrompt, UserProfile, ChatMessage } from '../types/chat';
+import { ConversationMeta, UserProfile, ChatMessage } from '../types/chat';
 import { UI_STRINGS } from '../constants/uiStrings';
 
 export const INITIAL_USER_PROFILE: UserProfile = {
@@ -61,39 +61,11 @@ export const INITIAL_CONVERSATIONS: ConversationMeta[] = [
   },
 ];
 
-export const SUGGESTION_PROMPTS: SuggestionPrompt[] = [
-  {
-    id: 'sug-1',
-    title: 'Leaf Foliage Pathology Scan',
-    description: 'Upload a macro photo of infected leaf blades for rapid pathogen classification.',
-    promptText: 'I am uploading a leaf photo showing dark brown water-soaked lesions. Please classify the pathogen, calculate disease severity percentage, and prescribe immediate field interventions.',
-    tag: 'Foliage Pathology',
-    cropTarget: 'Solanaceous / Vegetables',
-  },
-  {
-    id: 'sug-2',
-    title: 'Nutrient Deficiency vs Fungal Infection',
-    description: 'Differentiate interveinal chlorosis from early-stage viral or fungal leaf spot.',
-    promptText: 'Explain how to differentiate interveinal chlorosis caused by magnesium deficiency from early viral mosaic mottling on young crop foliage.',
-    tag: 'Physiological Stress',
-    cropTarget: 'All Field Crops',
-  },
-  {
-    id: 'sug-3',
-    title: 'Targeted Fungicide & Biological Regimen',
-    description: 'Calculate copper hydroxide, bio-fungicide, or systemic spray schedules based on weather humidity.',
-    promptText: 'Provide a combined organic and chemical spray schedule for Late Blight in tomato greenhouses with high relative humidity (>85%).',
-    tag: 'Agronomic Treatment',
-    cropTarget: 'Horticulture',
-  },
-  {
-    id: 'sug-4',
-    title: 'Cereal Grain Rust & Bunt Analysis',
-    description: 'Assess yellow or brown pustule formation on wheat flag leaves and estimate yield loss risk.',
-    promptText: 'Analyze yellow linear pustule clusters on wheat flag leaves at the grain-filling stage, including estimated yield reduction if untreated.',
-    tag: 'Cereal Pathology',
-    cropTarget: 'Wheat & Barley',
-  },
+export const SUGGESTION_PROMPTS: string[] = [
+  'Common causes of brown spots on crop leaves and how to treat them',
+  'How to tell if yellow leaves are caused by nutrient deficiency or disease',
+  'Spray schedule for tomato late blight in high humidity',
+  'Preventive treatments and spray timings for yellow rust in wheat',
 ];
 
 export const SAMPLE_INITIAL_MESSAGES: Record<string, ChatMessage[]> = {

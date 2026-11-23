@@ -16,9 +16,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   const [stagedVideo, setStagedVideo] = useState<VideoAttachment | undefined>(undefined);
   const [isDragging, setIsDragging] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 640
+  );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Auto-resize textarea height
   useEffect(() => {
@@ -183,8 +194,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={UI_STRINGS.INPUT_PLACEHOLDER}
-            aria-label={UI_STRINGS.INPUT_PLACEHOLDER}
+            placeholder={
+              isMobile
+                ? UI_STRINGS.INPUT_PLACEHOLDER_MOBILE
+                : UI_STRINGS.INPUT_PLACEHOLDER
+            }
+            aria-label={
+              isMobile
+                ? UI_STRINGS.INPUT_PLACEHOLDER_MOBILE
+                : UI_STRINGS.INPUT_PLACEHOLDER
+            }
             disabled={disabled}
             className="flex-1 resize-none border-0 bg-transparent text-[15px] font-body text-ink dark:text-on-dark leading-normal py-1.5 px-1 max-h-40 outline-none tracking-wide placeholder:text-muted dark:placeholder:text-muted-soft"
           />

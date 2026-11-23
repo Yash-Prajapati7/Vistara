@@ -1,64 +1,58 @@
 import React from 'react';
-import { ArrowUpRight, Leaf, Activity, ShieldAlert, FileSpreadsheet } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { SUGGESTION_PROMPTS } from '../../data/mockData';
-import { SuggestionPrompt } from '../../types/chat';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface EmptyStateProps {
   onSelectPrompt: (promptText: string) => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ onSelectPrompt }) => {
-  const getPromptIcon = (tag: string) => {
-    switch (tag) {
-      case 'Foliage Pathology':
-        return <Leaf size={18} strokeWidth={1.8} />;
-      case 'Physiological Stress':
-        return <Activity size={18} strokeWidth={1.8} />;
-      case 'Agronomic Treatment':
-        return <ShieldAlert size={18} strokeWidth={1.8} />;
-      case 'Cereal Pathology':
-      default:
-        return <FileSpreadsheet size={18} strokeWidth={1.8} />;
-    }
-  };
-
   return (
-    <div className="flex flex-col items-center justify-center max-w-[820px] w-full mx-auto px-5 py-6 text-center relative z-10">
-      {/* 2x2 Feature Suggestion Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full text-left">
-        {SUGGESTION_PROMPTS.map((prompt: SuggestionPrompt) => (
-          <div
-            key={prompt.id}
-            onClick={() => onSelectPrompt(prompt.promptText)}
-            className="group p-5 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between gap-3 shadow-subtle hover:-translate-y-0.5 hover:border-hairline-strong dark:hover:border-white/25 hover:shadow-soft"
-          >
-            <div className="flex items-start justify-between">
-              <div className="w-8 h-8 rounded-lg bg-surface-strong dark:bg-white/10 text-ink dark:text-on-dark flex items-center justify-center">
-                {getPromptIcon(prompt.tag)}
-              </div>
-
-              <div className="text-muted dark:text-muted-soft group-hover:text-ink dark:group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-150">
-                <ArrowUpRight size={16} />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[14.5px] font-medium text-ink dark:text-on-dark mb-1 leading-snug">
-                {prompt.title}
-              </div>
-              <div className="text-[12.5px] text-body dark:text-muted-soft leading-relaxed tracking-wide">
-                {prompt.description}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] font-semibold tracking-wider uppercase text-muted dark:text-muted-soft">
-              <span>{prompt.tag}</span>
-              <span className="font-medium text-muted-soft dark:text-white/40">
-                {prompt.cropTarget}
-              </span>
-            </div>
+    <div className="w-full max-w-[920px] mx-auto px-5 py-6 sm:py-8 relative z-10">
+      <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-10">
+        {/* Left Column: 60% Width - Greeting & Prompts */}
+        <div className="w-full md:w-[60%] flex flex-col text-left">
+          {/* Editorial Greeting Header */}
+          <div className="mb-6">
+            <h1 className="font-display text-[30px] sm:text-[36px] font-light text-ink dark:text-white tracking-tight leading-tight mb-2">
+              {UI_STRINGS.EMPTY_STATE_GREETING}
+            </h1>
           </div>
-        ))}
+
+          {/* Vertical List of Sample Prompts */}
+          <div className="flex flex-col gap-2.5 w-full">
+            {SUGGESTION_PROMPTS.map((promptText, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectPrompt(promptText)}
+                className={`group w-full px-4 py-3 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/10 rounded-xl cursor-pointer transition-all duration-150 items-center justify-between gap-3 text-left shadow-subtle hover:border-hairline-strong dark:hover:border-white/25 hover:bg-canvas-soft dark:hover:bg-white/5 active:scale-[0.99] ${
+                  idx >= 3 ? 'hidden sm:flex' : 'flex'
+                }`}
+              >
+                <span className="text-[13.5px] text-body-strong dark:text-on-dark font-normal leading-snug group-hover:text-ink dark:group-hover:text-white transition-colors">
+                  {promptText}
+                </span>
+                <ArrowUpRight
+                  size={15}
+                  className="text-muted dark:text-muted-soft group-hover:text-ink dark:group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: 40% Width - Waving Botanical Plant */}
+        <div className="w-full md:w-[40%] flex items-center justify-center">
+          <div className="relative flex items-center justify-center p-2">
+            <img
+              src="/image.png"
+              alt={UI_STRINGS.BOTANICAL_IMAGE_ALT}
+              className="max-h-[300px] sm:max-h-[380px] md:max-h-[420px] w-auto object-contain select-none pointer-events-none origin-bottom transform-gpu animate-gentle-sway drop-shadow-sm dark:invert dark:opacity-85 transition-all duration-300"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -72,11 +72,4 @@ export interface UserProfile {
   scansRemaining: string;
 }
 
-export interface SuggestionPrompt {
-  id: string;
-  title: string;
-  description: string;
-  promptText: string;
-  tag: string;
-  cropTarget: string;
-}
+export type SuggestionPrompt = string;
