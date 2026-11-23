@@ -10,6 +10,8 @@ interface SidebarProps {
   conversations: ConversationMeta[];
   activeConversationId: string;
   user: UserProfile;
+  responseLanguage: string;
+  onSelectLanguage: (language: string) => void;
   isOpen: boolean;
   onToggle: () => void;
   onSelectConversation: (id: string) => void;
@@ -22,6 +24,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   conversations,
   activeConversationId,
   user,
+  responseLanguage,
+  onSelectLanguage,
   isOpen,
   onToggle,
   onSelectConversation,
@@ -113,7 +117,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
 
         {/* Accounts Section at bottom-left */}
-        <AccountSection user={user} />
+        <AccountSection
+          user={user}
+          responseLanguage={responseLanguage}
+          onSelectLanguage={onSelectLanguage}
+        />
       </aside>
     </>
   );

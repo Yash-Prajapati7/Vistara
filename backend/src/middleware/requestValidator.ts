@@ -25,6 +25,7 @@ const chatRequestSchema = z.object({
   sessionId: z.string().optional(),
   userId: z.string().optional(),
   prompt: z.string().min(1, SERVER_STRINGS.ERR_MISSING_PROMPT),
+  responseLanguage: z.string().optional(),
   image: imageAttachmentSchema,
   video: videoAttachmentSchema,
   modelId: z.enum(ALLOWED_MODEL_IDS, {

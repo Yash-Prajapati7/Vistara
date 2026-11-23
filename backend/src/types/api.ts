@@ -8,6 +8,7 @@ export interface ChatRequestBody {
   sessionId?: string;
   userId?: string;
   prompt: string;
+  responseLanguage?: string;
   image?: ImageAttachmentPayload;
   modelId?: SupportedModelId;
 }

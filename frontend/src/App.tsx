@@ -53,7 +53,7 @@ const formatTimestamp = (dateInput?: string | Date): string => {
  * Video uploads start as "Field Video Diagnostic Scan".
  * Photo uploads start as "Leaf Specimen Scan" until diagnosed.
  */
-export const deriveChatTitle = (prompt: string, hasImage: boolean, hasVideo: boolean = false): string => {
+const deriveChatTitle = (prompt: string, hasImage: boolean, hasVideo: boolean = false): string => {
   if (hasVideo) {
     return UI_STRINGS.DERIVED_TITLE_VIDEO_SCAN;
   }
@@ -99,8 +99,19 @@ export const App: React.FC = () => {
   const [userProfile] = useState(INITIAL_USER_PROFILE);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedModel, setSelectedModel] = useState<string>(UI_STRINGS.MODEL_DEFAULT);
+  const [responseLanguage, setResponseLanguage] = useState<string>(() => {
+    return (
+      localStorage.getItem(UI_STRINGS.STORAGE_KEY_RESPONSE_LANGUAGE) ||
+      UI_STRINGS.DEFAULT_RESPONSE_LANGUAGE
+    );
+  });
   const [isStreaming, setIsStreaming] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const handleSelectLanguage = (newLanguage: string) => {
+    setResponseLanguage(newLanguage);
+    localStorage.setItem(UI_STRINGS.STORAGE_KEY_RESPONSE_LANGUAGE, newLanguage);
+  };
 
   // Sync user conversations from MongoDB on initial mount
   useEffect(() => {
@@ -376,6 +387,7 @@ export const App: React.FC = () => {
       sessionId: activeConversationId,
       userId: UI_STRINGS.DEFAULT_USER_ID,
       prompt: text,
+      responseLanguage,
       imageAttachment: image,
       videoAttachment: video,
       modelId: UI_STRINGS.MODEL_ID_MIMO,
@@ -611,6 +623,8 @@ export const App: React.FC = () => {
         conversations={conversations}
         activeConversationId={activeConversationId}
         user={userProfile}
+        responseLanguage={responseLanguage}
+        onSelectLanguage={handleSelectLanguage}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onSelectConversation={handleSelectConversation}

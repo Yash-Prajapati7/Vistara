@@ -14,6 +14,7 @@ export interface SendMessageParams {
   sessionId: string;
   userId?: string;
   prompt: string;
+  responseLanguage?: string;
   imageAttachment?: ImageAttachment;
   videoAttachment?: VideoAttachment;
   modelId?: string;
@@ -42,6 +43,7 @@ export class ChatService {
     sessionId,
     userId = UI_STRINGS.DEFAULT_USER_ID,
     prompt,
+    responseLanguage,
     imageAttachment,
     videoAttachment,
     modelId,
@@ -53,6 +55,7 @@ export class ChatService {
       sessionId,
       userId,
       prompt,
+      responseLanguage,
       modelId,
       image: imageAttachment
         ? {

@@ -34,7 +34,7 @@ export interface LanguageOption {
   code: string;
   name: string;
   native: string;
-  category: 'indian' | 'international';
+  category: 'standard' | 'indian' | 'international';
 }
 
 export interface ChatMessage {

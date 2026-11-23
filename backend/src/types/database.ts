@@ -42,6 +42,7 @@ export interface ChatTurn {
   turnId: string;
   prompt: string;
   completion: string;
+  responseLanguage?: string;
   imageBase64?: string;
   imageMeta?: DiagnosticImageMeta;
   videoBase64?: string;

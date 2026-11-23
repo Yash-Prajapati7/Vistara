@@ -11,6 +11,7 @@ import { logger } from '../utils/logger.js';
 export interface PathologyStreamRequest {
   sessionId: string;
   currentPrompt: string;
+  responseLanguage?: string;
   image?: ImageAttachmentPayload;
   video?: VideoAttachmentPayload;
   modelId?: string;
@@ -29,6 +30,7 @@ export interface TranslationStreamRequest {
 export async function streamPathologyDiagnosis({
   sessionId,
   currentPrompt,
+  responseLanguage,
   image,
   video,
   modelId,
@@ -45,6 +47,7 @@ export async function streamPathologyDiagnosis({
   logger.info('Initiating vision-language diagnostic stream', {
     sessionId,
     targetModel,
+    responseLanguage: responseLanguage || SERVER_STRINGS.DEFAULT_RESPONSE_LANGUAGE,
     priorPromptsCount: storedPrompts.length,
     hasLastResponse: Boolean(lastModelResponse),
     hasImage,
@@ -53,8 +56,8 @@ export async function streamPathologyDiagnosis({
 
   // Construct context-enriched user prompt selecting dedicated prompt for video vs image
   const composedPrompt = hasVideo
-    ? buildVideoPathologyUserPrompt(currentPrompt, storedPrompts, lastModelResponse, true)
-    : buildPathologyUserPrompt(currentPrompt, storedPrompts, lastModelResponse, hasImage);
+    ? buildVideoPathologyUserPrompt(currentPrompt, storedPrompts, lastModelResponse, true, responseLanguage)
+    : buildPathologyUserPrompt(currentPrompt, storedPrompts, lastModelResponse, hasImage, responseLanguage);
 
   // Store the current prompt into the session's prompt array
   contextService.recordUserPrompt(sessionId, currentPrompt, hasImage || hasVideo);

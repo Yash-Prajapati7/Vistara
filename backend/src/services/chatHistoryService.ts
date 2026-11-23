@@ -80,13 +80,15 @@ export class ChatHistoryService {
     userId: string,
     prompt: string,
     image?: ImageAttachmentPayload,
-    video?: VideoAttachmentPayload
+    video?: VideoAttachmentPayload,
+    responseLanguage?: string
   ): Promise<string> {
     const turnId = `turn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const turn: ChatTurn = {
       [DB_CONSTANTS.FIELD_TURN_ID]: turnId,
       [DB_CONSTANTS.FIELD_PROMPT]: prompt.trim(),
       [DB_CONSTANTS.FIELD_COMPLETION]: SERVER_STRINGS.EMPTY_STRING,
+      [DB_CONSTANTS.FIELD_RESPONSE_LANGUAGE]: responseLanguage,
       [DB_CONSTANTS.FIELD_IMAGE_BASE64]: image?.data,
       [DB_CONSTANTS.FIELD_IMAGE_META]: image
         ? {

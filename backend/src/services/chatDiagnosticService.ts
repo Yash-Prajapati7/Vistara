@@ -14,6 +14,7 @@ export interface StreamDiagnosisOptions {
   clientSessionId?: string;
   clientUserId?: string;
   prompt: string;
+  responseLanguage?: string;
   image?: ImageAttachmentPayload;
   video?: VideoAttachmentPayload;
   modelId?: string;
@@ -41,6 +42,7 @@ export class ChatDiagnosticService {
     clientSessionId,
     clientUserId,
     prompt,
+    responseLanguage,
     image,
     video,
     modelId,
@@ -51,9 +53,9 @@ export class ChatDiagnosticService {
     const session = contextService.getOrCreateSession(clientSessionId);
     const sessionId = session.sessionId;
 
-    // Persist user turn and image/video base64 directly into MongoDB chat history
+    // Persist user turn, responseLanguage, and image/video base64 directly into MongoDB chat history
     try {
-      await chatHistoryService.recordUserTurn(sessionId, userId, prompt, image, video);
+      await chatHistoryService.recordUserTurn(sessionId, userId, prompt, image, video, responseLanguage);
     } catch (dbError: unknown) {
       logger.error('Failed to record user turn in database', dbError);
     }
@@ -75,6 +77,7 @@ export class ChatDiagnosticService {
       const streamResult = await streamPathologyDiagnosis({
         sessionId,
         currentPrompt: prompt,
+        responseLanguage,
         image,
         video,
         modelId,

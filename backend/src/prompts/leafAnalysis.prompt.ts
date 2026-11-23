@@ -63,9 +63,24 @@ export function buildPathologyUserPrompt(
   currentPrompt: string,
   storedPrompts: string[],
   lastModelResponse: string | null,
-  hasImage: boolean
+  hasImage: boolean,
+  responseLanguage?: string
 ): string {
   const parts: string[] = [];
+
+  // Multilingual response directive if a non-English global response language is selected
+  if (responseLanguage && responseLanguage.trim().toLowerCase() !== 'english') {
+    parts.push(`=== MULTILINGUAL RESPONSE DIRECTIVE: ${responseLanguage.toUpperCase()} ===`);
+    parts.push(`User Selected Global Response Language: ${responseLanguage}`);
+    parts.push(`CRITICAL INSTRUCTION: You MUST generate your entire response (including Markdown headings, bullet points, clinical pathology observations, chemical treatment dosages, and cultural preventative actions) in ${responseLanguage}.`);
+    parts.push('CRITICAL JSON SCHEMA RULES:');
+    parts.push('1. If Mode 3 is executed, trailing JSON keys MUST ALWAYS REMAIN STRICTLY IN ENGLISH:');
+    parts.push('   "crop", "disease", "pathogenType", "confidence", "severity", "symptoms", "organicTreatment", "chemicalTreatment", "preventativeAction".');
+    parts.push(`2. All string values inside the JSON object MUST be translated accurately into ${responseLanguage}.`);
+    parts.push('3. Retain scientific Latin binomial nomenclature (e.g., Alternaria solani, Solanum lycopersicum) in Latin.');
+    parts.push('4. STRICTLY ZERO EMOJIS: Never output emojis anywhere in the response text, headings, or JSON payload.');
+    parts.push('========================================================================\n');
+  }
 
   // Multi-turn context injection if prior prompts exist
   if (storedPrompts.length > 0) {

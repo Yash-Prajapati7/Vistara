@@ -20,13 +20,14 @@ chatRouter.post(
   SERVER_STRINGS.ROUTE_ROOT,
   validateChatRequest,
   async (req: Request, res: Response): Promise<void> => {
-    const { sessionId, userId, prompt, image, video, modelId } = req.body;
+    const { sessionId, userId, prompt, image, video, modelId, responseLanguage } = req.body;
 
     await chatDiagnosticService.streamDiagnosis({
       res,
       clientSessionId: sessionId,
       clientUserId: userId,
       prompt,
+      responseLanguage,
       image,
       video,
       modelId,

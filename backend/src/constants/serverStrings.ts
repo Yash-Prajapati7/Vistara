@@ -33,6 +33,9 @@ export const SERVER_STRINGS = {
   //Empty String
   EMPTY_STRING: '',
 
+  // Default language for responding
+  DEFAULT_RESPONSE_LANGUAGE: 'English',
+
   // SSE Protocol & Event Types
   EVENT_TEXT_DELTA: 'text-delta',
   EVENT_THINKING_DELTA: 'thinking-delta',

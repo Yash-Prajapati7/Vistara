@@ -31,6 +31,7 @@ export const DB_CONSTANTS = {
   FIELD_TURN_ID: 'turnId',
   FIELD_PROMPT: 'prompt',
   FIELD_COMPLETION: 'completion',
+  FIELD_RESPONSE_LANGUAGE: 'responseLanguage',
   FIELD_IMAGE_BASE64: 'imageBase64',
   FIELD_IMAGE_META: 'imageMeta',
   FIELD_IMAGE_NAME: 'name',

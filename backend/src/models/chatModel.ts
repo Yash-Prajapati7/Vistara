@@ -42,6 +42,7 @@ const chatTurnSchema = new Schema<ChatTurn>(
     [DB_CONSTANTS.FIELD_TURN_ID]: { type: String, required: true },
     [DB_CONSTANTS.FIELD_PROMPT]: { type: String, required: true },
     [DB_CONSTANTS.FIELD_COMPLETION]: { type: String, default: SERVER_STRINGS.EMPTY_STRING },
+    [DB_CONSTANTS.FIELD_RESPONSE_LANGUAGE]: { type: String, required: false },
     [DB_CONSTANTS.FIELD_IMAGE_BASE64]: { type: String, required: false },
     [DB_CONSTANTS.FIELD_IMAGE_META]: { type: imageMetaSchema, required: false },
     [DB_CONSTANTS.FIELD_VIDEO_BASE64]: { type: String, required: false },

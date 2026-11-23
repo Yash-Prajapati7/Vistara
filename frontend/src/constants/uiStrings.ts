@@ -37,6 +37,14 @@ export const UI_STRINGS = {
   REGENERATE: 'Re-analyze symptoms',
   TRANSLATE: 'Translate',
   TRANSLATE_DROPDOWN_TITLE: 'Translate to',
+  RESPONSE_LANGUAGE_LABEL: 'Response Language',
+  RESPONSE_LANGUAGE_TOOLTIP: 'Global language for all pathology assessments',
+  RESPONSE_LANGUAGE_SELECT_TITLE: 'Select Response Language',
+  DEFAULT_RESPONSE_LANGUAGE: 'English',
+  DEFAULT_LANGUAGE_CODE: 'en',
+  STORAGE_KEY_RESPONSE_LANGUAGE: 'vistara-response-language',
+  CATEGORY_STANDARD_LANGUAGE: 'Standard Language',
+  LANG_CATEGORY_STANDARD: 'standard',
   CATEGORY_INDIAN_LANGUAGES: 'Indian Languages',
   CATEGORY_INTERNATIONAL_LANGUAGES: 'International Languages',
   LANG_CATEGORY_INDIAN: 'indian',
@@ -48,6 +56,7 @@ export const UI_STRINGS = {
   RENAME: 'Rename case',
   DELETE: 'Delete case',
   CANCEL: 'Cancel',
+  BACK: 'Back',
   SAVE: 'Save',
   CLOSE: 'Close',
 
@@ -123,7 +132,7 @@ export const UI_STRINGS = {
   SEARCH_HINT: 'Ctrl + K',
 
   // Footers & Disclaimers
-  DISCLAIMER: 'Vistara provides AI-assisted agricultural diagnostics. Cross-verify critical field treatments with local agricultural extension officers.',
+  DISCLAIMER: 'Vistara provides AI-assisted agricultural diagnostics. Cross-verify critical field treatments.',
   IMAGE_ATTACHED_LABEL: 'Attached crop specimen photo',
   VIDEO_ATTACHED_LABEL: 'Attached crop field video',
   DRAG_IMAGE_ACTIVE: 'Drop crop photo or video here...',
@@ -211,6 +220,9 @@ export const UI_STRINGS = {
 } as const;
 
 export const SUPPORTED_LANGUAGES = [
+  // Standard / Default Language
+  { code: 'en', name: 'English', native: 'English', category: 'standard' as const },
+
   // Indian Regional Languages
   { code: 'hi', name: 'Hindi', native: 'हिन्दी', category: 'indian' as const },
   { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી', category: 'indian' as const },
