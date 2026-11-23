@@ -2,27 +2,32 @@
 
 **Vision-Language System for Transformer-based Agricultural Disease Recognition and Analysis**
 
-Vistara is an AI-powered agricultural intelligence and foliar pathology diagnostic system designed for farmers, agronomists, crop researchers, and agricultural extension officers. It combines state-of-the-art multimodal vision-language transformer models with field-tested agronomic practices to diagnose crop foliage infections, determine lesion damage severity, identify causal pathogens, and formulate dual-track treatment plans in real time.
+Vistara is an AI-powered agricultural intelligence and foliar pathology diagnostic system designed for farmers, agronomists, crop researchers, and agricultural extension officers. It combines state-of-the-art multimodal vision-language transformer models with field-tested agronomic practices to diagnose crop foliage infections, evaluate foliar videos and photos, identify causal pathogens, calculate calibrated severity indices, and formulate dual-track treatment plans in real time.
 
 ---
 
 ## 1. What is Vistara
 
-Vistara bridges the gap between field-level crop distress and specialized plant pathology expertise. By evaluating high-resolution foliar photography and natural language symptom descriptions, Vistara delivers clinical-grade pathology reports accompanied by immediate, actionable intervention regimens.
+Vistara bridges the gap between field-level crop distress and specialized plant pathology expertise. By evaluating high-resolution foliar photography, canopy video footage, and natural language symptom descriptions, Vistara delivers clinical-grade pathology reports accompanied by immediate, actionable intervention regimens.
 
 ### Core Capabilities
 
-- **Multimodal Visual Examination**: Evaluates complex foliar pathology markers, including concentric target rings, angular lesions, water-soaked margins, anthracnose spots, powdery or downy sporulation, rust pustules, and chlorotic halos.
+- **Multimodal Visual & Video Examination**: Evaluates complex foliar pathology markers across leaf, stem, lesion, and fruit imagery as well as canopy video clips. Detects concentric target rings, angular lesions, water-soaked margins, anthracnose spots, powdery or downy sporulation, rust pustules, and chlorotic halos.
 - **Taxonomic Pathogen Classification**: Identifies causal pathogens across fungi, bacteria, viruses, oomycetes, nematodes, and abiotic physiological stresses using standard Latin binomial scientific nomenclature (e.g., *Phytophthora infestans*, *Alternaria solani*, *Xanthomonas campestris*).
 - **Calibrated Staging & Severity Index**: Quantifies canopy leaf area affected into calibrated severity tiers (Low, Moderate, Severe, Critical) with a realistic diagnostic confidence score.
 - **Dual-Track Intervention Regimen**:
   - *Targeted Chemical Countermeasures*: Registered active ingredients (e.g., Chlorothalonil 75% WP, Azoxystrobin, Mancozeb) with exact water dilution dosages per liter, safety intervals, and re-application schedules.
   - *Organic & Biological Alternatives*: Certified bio-control agents (e.g., *Bacillus subtilis*, *Trichoderma harzianum*, cold-pressed neem kernel extract) and cultural prophylactic measures.
-- **Adaptive Multi-Mode Dialogue**:
-  - *Mode 1 (Conversational & Identity)*: Responds naturally to greetings, system identity questions, and general capability inquiries without triggering empty pathology templates.
-  - *Mode 2 (Agronomic Follow-up Q&A)*: Answers specific follow-up questions (e.g., application timing, fertilizer compatibility, rainfastness) using conversational context without repeating the formal diagnosis template.
-  - *Mode 3 (Clinical Pathology Examination)*: Triggers complete visual pathology analysis when foliage photos or specific symptom descriptions are submitted.
-- **Persistent Case Workspace**: Full conversation history stored in MongoDB, with chronological case grouping (Today, Yesterday, Previous 7 Days), lazy-loaded dialogue turns, and editorial ElevenLabs-inspired aesthetic.
+- **Adaptive Model Modes**:
+  - **Auto**: Automatically chooses the best balance of speed and detail based on prompt complexity and diagnostic needs.
+  - **Quick**: Streamlined for fast answers, quick leaf checks, and rapid preliminary scans.
+  - **Expert**: Deep reasoning mode engineered for complex crop issues, multi-lesion analysis, and detailed agronomic treatment regimens.
+- **Global Multilingual Consultation**: Built-in support for 15+ regional and international languages (including English, Hindi, Marathi, Telugu, Tamil, Gujarati, Bengali, Punjabi, Kannada, Malayalam, Spanish, French, and Portuguese). The model delivers native-language explanations while strictly preserving Latin binomial taxonomy and telemetry keys.
+- **Multi-Mode Clinical Dialogue**:
+  - *Mode 1 (Conversational & Identity)*: Responds naturally to greetings and capability queries without generating unnecessary pathology cards.
+  - *Mode 2 (Agronomic Follow-up Q&A)*: Answers specific follow-up questions (application timing, rainfastness, tank-mix compatibility) using active session context.
+  - *Mode 3 (Clinical Pathology Examination)*: Produces full structured pathology evaluations when symptomatic foliage or video footage is submitted.
+- **Persistent Case Workspace**: Full conversation history stored in MongoDB, with chronological case grouping (Today, Yesterday, Previous 7 Days), lazy-loaded dialogue turns, and an editorial publication aesthetic.
 
 ---
 
@@ -47,12 +52,12 @@ The following diagram illustrates the end-to-end architecture of Vistara, from c
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["Frontend Client (Vite + React 18)"]
+    subgraph Frontend["Frontend Client (Vite + React 18 + Tailwind v3)"]
         UI["Chatbot Workspace UI"]
-        InputDeck["Input Deck (Text + Specimen Upload)"]
-        Sidebar["Chronological Case History & Search"]
-        ReportCard["Pathology Assessment Card"]
-        Modal["Delete Confirmation Modal"]
+        InputDeck["Input Deck (Text, Voice, Specimen Photo & Video)"]
+        Sidebar["Chronological Case History, Search & Language Flyout"]
+        Header["Header Bar (Auto / Quick / Expert Model Selector & Theme Toggle)"]
+        ReportCard["Pathology Assessment Bento Card"]
         ChatService["ChatService (Axios SSE Client)"]
     end
 
@@ -61,18 +66,19 @@ flowchart TD
     end
 
     subgraph Backend["Backend Service (Node.js + Express)"]
-        Router["Express API Router"]
-        Validator["Request Validation (Zod)"]
-        DiagService["ChatDiagnosticService"]
-        AIService["AIService (Vercel AI SDK)"]
-        ContextService["ContextService (In-Memory Session Cache)"]
+        Router["Express API Router (/api/chat, /api/health, /api/users)"]
+        Validator["Request Validation (Zod Schemas)"]
+        DiagService["ChatDiagnosticService (SSE Pipeline Orchestrator)"]
+        AIService["AIService (Multimodal Streaming & Prompt Assembly)"]
+        ContextService["ContextService (In-Memory Session Context)"]
         Parser["ResponseParser (Markdown + JSON Extraction)"]
-        HistoryService["ChatHistoryService"]
+        HistoryService["ChatHistoryService (Case CRUD & Intelligent Titles)"]
+        Prompts["Pathology Prompts (leafAnalysis & videoAnalysis)"]
     end
 
     subgraph ExternalAI["External Vision-Language Provider"]
         Gateway["Vercel AI Gateway"]
-        QwenVL["Alibaba Qwen 3.7 Flash (Multimodal VL Model)"]
+        VLModel["Multimodal Transformer VL Models (Mimo v2.6 Flash / Qwen 3.7 Flash)"]
     end
 
     subgraph Database["Database Layer (MongoDB)"]
@@ -82,8 +88,9 @@ flowchart TD
     end
 
     InputDeck --> UI
+    Header --> UI
+    Sidebar --> UI
     UI --> ChatService
-    Sidebar --> ChatService
     ChatService --> Proxy
     Proxy --> Router
 
@@ -94,9 +101,10 @@ flowchart TD
     DiagService --> HistoryService
     DiagService --> AIService
 
+    AIService --> Prompts
     AIService --> Gateway
-    Gateway --> QwenVL
-    QwenVL -- "Streaming Text & Reasoning Deltas" --> AIService
+    Gateway --> VLModel
+    VLModel -- "Streaming Reasoning (<think>) & Diagnosis Deltas" --> AIService
 
     AIService --> Parser
     Parser --> DiagService
@@ -106,7 +114,7 @@ flowchart TD
     MongoDB --- ChatCollection
     MongoDB --- UserCollection
 
-    DiagService -- "Server-Sent Events (SSE)" --> ChatService
+    DiagService -- "Server-Sent Events (SSE: text, thinking, data)" --> ChatService
     ChatService --> ReportCard
     ChatService --> UI
 ```
@@ -117,8 +125,8 @@ flowchart TD
 
 Vistara employs a four-tiered architectural approach to deliver robust, safe, and actionable agricultural intelligence:
 
-### 1. Vision-Language Diagnostic Prompting
-Vistara uses a specialized system prompt grounded in plant pathology. The prompt directs the multimodal model to inspect foliar lesion morphology, cross-reference host crop species, identify pathogen categories, estimate visual severity indices, and formulate dual-track chemical and organic treatment regimens.
+### 1. Multimodal Diagnostic Prompt Engineering
+Specialized system prompts grounded in plant pathology (`leafAnalysis.prompt.ts` and `videoAnalysis.prompt.ts`) guide the vision-language model to inspect lesion morphology, host crop biology, pathogen taxonomy, and visual severity percentages. Multilingual directives seamlessly adapt responses into the farmer's chosen language while maintaining standardized English JSON schema tags for frontend telemetry.
 
 ### 2. Dual-Track Agronomic Countermeasures
 Every pathology diagnosis delivers two concurrent treatment pathways:
@@ -130,7 +138,7 @@ Using Server-Sent Events (SSE), Vistara streams model completions back to the cl
 
 ### 4. Resilient Persistence & Context Continuity
 - Multi-turn context understanding maintains crop and disease context across follow-up queries.
-- Complete dialogue turns, specimen images, and parsed pathology reports are indexed in MongoDB.
+- Complete dialogue turns, specimen images, video metadata, and parsed pathology reports are indexed in MongoDB.
 - Sessions are saved with intelligent title derivation, ensuring casual greetings are labeled as *"General Consultation"* and specimen scans are labeled with their diagnosed crop and disease (e.g., *"Tomato Late Blight Analysis"*).
 
 ---
@@ -140,10 +148,10 @@ Using Server-Sent Events (SSE), Vistara streams model completions back to the cl
 ### Prerequisites
 
 Ensure you have the following installed on your development workstation:
-- **Node.js**: (v21+ recommended)
+- **Node.js**: v20+ (v21+ recommended)
 - **npm**: v9.0.0 or higher
 - **MongoDB**: Community Server v6.0+ running locally on port `27017` (or an active MongoDB Atlas connection URI)
-- **Vercel AI Gateway Key**: API key providing access to `alibaba/qwen3.7-flash` (or compatible model)
+- **Vercel AI Gateway Key**: API key providing access to supported vision-language models (`xiaomi/mimo-v2.6-flash`, `alibaba/qwen3.7-flash`)
 
 ---
 
@@ -183,9 +191,9 @@ cd "Vistara"
    AI_GATEWAY_API_KEY=your_actual_api_key_here
 
    # Vision-Language Model Identifier
-   AI_MODEL_ID=alibaba/qwen3.7-flash
+   AI_MODEL_ID=xiaomi/mimo-v2.6-flash
 
-   # CORS & Upload Limits
+   # CORS & Upload Limits (Supporting high-res photos and canopy videos)
    FRONTEND_ORIGIN=http://localhost:5173
    BODY_LIMIT=50mb
 
@@ -244,13 +252,13 @@ cd "Vistara"
    {
      "status": "healthy",
      "database": "connected",
-     "model": "alibaba/qwen3.7-flash",
+     "model": "xiaomi/mimo-v2.6-flash",
      "uptimeSeconds": 12,
      "environment": "development"
    }
    ```
 
-3. Submit a test foliar photograph or describe symptoms (e.g., *"My tomato leaves show circular brown spots with concentric rings"*), or send a conversational greeting (*"Hi, who are you?"*) to verify the vision-language pipeline.
+3. Submit a test foliar photograph, upload a canopy video, or ask a question (e.g., *"My tomato leaves show circular brown spots with concentric rings"*) to test the vision-language diagnostic pipeline.
 
 ---
 
@@ -274,7 +282,8 @@ cd "Vistara"
 │   │   │   ├── chatModel.ts    # Mongoose schema for chats, turns, and pathology
 │   │   │   └── userModel.ts    # Mongoose schema for agronomist profiles
 │   │   ├── prompts/
-│   │   │   └── leafAnalysis.prompt.ts # Plant pathology multi-mode prompt
+│   │   │   ├── leafAnalysis.prompt.ts  # Multimodal photo pathology prompt
+│   │   │   └── videoAnalysis.prompt.ts # Multimodal video pathology prompt
 │   │   ├── routes/
 │   │   │   ├── chatRoutes.ts   # /api/chat streaming, session, and title routes
 │   │   │   ├── healthRoutes.ts # /api/health monitoring endpoint
@@ -295,24 +304,26 @@ cd "Vistara"
 │   ├── package.json            # Backend scripts and dependencies
 │   └── tsconfig.json           # Backend TypeScript configuration
 ├── frontend/
+│   ├── public/
+│   │   └── favicon.svg         # High-contrast geometric octagonal network favicon
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AtmosphericOrbs.tsx # Ambient gradient background stops
 │   │   │   ├── Chat/
-│   │   │   │   ├── ChatHeader.tsx  # Header bar with model selector and actions
+│   │   │   │   ├── ChatHeader.tsx  # Header bar with Auto/Quick/Expert selector & theme toggle
 │   │   │   │   ├── EmptyState.tsx  # Editorial welcoming screen with prompt chips
-│   │   │   │   ├── MessageItem.tsx # Chat turn bubble and pathology card
+│   │   │   │   ├── MessageItem.tsx # Chat turn bubble and pathology report card
 │   │   │   │   └── MessageList.tsx # Auto-scrolling conversation container
 │   │   │   ├── InputDeck/
-│   │   │   │   ├── ChatInput.tsx   # Floating input deck with drag-and-drop
-│   │   │   │   └── ImagePreview.tsx# Specimen photo thumbnail with dismiss
+│   │   │   │   ├── ChatInput.tsx   # Floating input deck with photo & video upload
+│   │   │   │   └── ImagePreview.tsx# Specimen media thumbnail chip with dismiss
 │   │   │   ├── Modal/
-│   │   │   │   └── DeleteConfirmModal.tsx # Editorial delete confirmation dialog
-│   │   │   └── Sidebar/
-│   │   │       ├── AccountSection.tsx # Agronomist profile card & tier badge
-│   │   │       ├── ChatHistory.tsx    # Chronologically grouped session list
-│   │   │       ├── SearchBar.tsx      # Real-time case filter with Ctrl+K shortcut
-│   │   │       └── Sidebar.tsx        # Collapsible drawer wrapper
+│   │   │   │   └── DeleteConfirmModal.tsx # Delete confirmation dialog
+│   │   │   ├── Sidebar/
+│   │   │   │   ├── AccountSection.tsx # Agronomist profile card & language selector flyout
+│   │   │   │   ├── ChatHistory.tsx    # Chronologically grouped session list with delete action
+│   │   │   │   ├── SearchBar.tsx      # Real-time case filter with Ctrl+K shortcut
+│   │   │   │   └── Sidebar.tsx        # Collapsible drawer wrapper
+│   │   │   └── VistaraLogo.tsx # Pure SVG octagonal geometric network branding
 │   │   ├── constants/
 │   │   │   └── uiStrings.ts    # Single source of truth for all UI strings
 │   │   ├── context/
@@ -327,9 +338,10 @@ cd "Vistara"
 │   │   └── main.tsx            # React application entry point
 │   ├── index.html              # HTML shell with EB Garamond & Inter webfonts
 │   ├── package.json            # Frontend scripts and dependencies
-│   ├── tailwind.config.js      # Design tokens (ElevenLabs editorial palette)
+│   ├── tailwind.config.js      # Design tokens (ElevenLabs editorial palette & Zinc 900 dark theme)
 │   ├── tsconfig.json           # Frontend TypeScript configuration
 │   └── vite.config.ts          # Vite configuration with /api proxy
+├── DESIGN_PLAN.md              # Engineering roadmap and design system specifications
 └── README.md                   # Project documentation
 ```
 
@@ -339,10 +351,7 @@ cd "Vistara"
 
 - **Zero Emojis**: Emojis are strictly banned across the UI, mock data, button labels, and code comments.
 - **Iconography**: Exclusively uses `lucide-react` icons.
+- **Vector Branding**: Uses pure SVG octagonal geometric network icons (`VistaraLogo.tsx` and `favicon.svg`) with `currentColor` scaling, avoiding bitmap degradation or background tile artifacts.
 - **Typography**: Display headings use **EB Garamond 300** (Light serif, unbolded) for an editorial publication aesthetic; body, navigation, badges, and controls use **Inter**.
 - **Centralized String Constants**: Hardcoded strings are disallowed in UI components; all labels, placeholders, and status text are maintained in `frontend/src/constants/uiStrings.ts` and `backend/src/constants/serverStrings.ts`.
-- **Theme Consistency**: Full light and dark mode support with Tailwind CSS tokens (`bg-canvas`, `bg-surface-card`, `dark:bg-surface-dark-elevated`).
-
----
-
-
+- **Refined Theme Aesthetics**: Light and dark mode support with tailored Tailwind CSS tokens. Dark mode uses a clean Zinc 900 (`#18181b`) canvas with `#1f1f23` elevated surfaces for high-contrast, distraction-free clinical review.
