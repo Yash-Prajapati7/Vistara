@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Sprout, PanelLeftClose } from 'lucide-react';
+import { Plus, PanelLeftClose } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { ChatHistory } from './ChatHistory';
 import { AccountSection } from './AccountSection';
 import { ConversationMeta, UserProfile } from '../../types/chat';
 import { UI_STRINGS } from '../../constants/uiStrings';
+import { VistaraLogo } from '../VistaraLogo';
 
 interface SidebarProps {
   conversations: ConversationMeta[];
@@ -62,16 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Top Branding & Collapse button */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-hairline dark:border-white/10 flex-shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-ink dark:bg-white text-on-primary dark:text-ink flex items-center justify-center flex-shrink-0">
-              <Sprout size={18} strokeWidth={2.2} />
-            </div>
-            <div>
-              <div className="font-display text-xl font-medium tracking-tight leading-none text-ink dark:text-on-dark">
-                {UI_STRINGS.BRAND_NAME}
-              </div>
-              <div className="text-[10px] text-muted dark:text-muted-soft tracking-wider font-semibold uppercase mt-0.5">
-                Agricultural VL System
-              </div>
+            <VistaraLogo className="w-8 h-8" />
+            <div className="font-display text-xl font-medium tracking-tight leading-none text-ink dark:text-on-dark">
+              {UI_STRINGS.BRAND_NAME}
             </div>
           </div>
 

@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   PanelLeftOpen,
   Share2,
   Trash2,
   ChevronDown,
   Check,
-  Sprout,
   Sun,
   Moon,
+  Sparkles,
+  Zap,
+  Microscope,
 } from 'lucide-react';
 import { UI_STRINGS } from '../../constants/uiStrings';
 import { useTheme } from '../../context/ThemeContext';
@@ -22,10 +24,24 @@ interface ChatHeaderProps {
 }
 
 const AVAILABLE_MODELS = [
-  { id: 'vistara-v2', name: 'Vistara AgriVision 2.0 (Transformer VL)', tag: 'Vision-Language' },
-  { id: 'vistara-path-pro', name: 'Vistara-Pathology Pro (High Res)', tag: 'Deep Lesion Segmentation' },
-  { id: 'vistara-lite', name: 'Vistara FieldLite (Mobile Edge)', tag: 'Ultra Low Latency' },
-  { id: 'vit-ensemble', name: 'ViT-Agronomy Ensemble', tag: 'Multi-Crop Zero-Shot' },
+  {
+    id: 'auto',
+    name: UI_STRINGS.MODEL_AUTO,
+    description: UI_STRINGS.MODEL_AUTO_DESC,
+    icon: Sparkles,
+  },
+  {
+    id: 'quick',
+    name: UI_STRINGS.MODEL_QUICK,
+    description: UI_STRINGS.MODEL_QUICK_DESC,
+    icon: Zap,
+  },
+  {
+    id: 'expert',
+    name: UI_STRINGS.MODEL_EXPERT,
+    description: UI_STRINGS.MODEL_EXPERT_DESC,
+    icon: Microscope,
+  },
 ];
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -39,6 +55,24 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const { isDark, toggleTheme } = useTheme();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    if (modelDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [modelDropdownOpen]);
+
+  const activeModelObj = AVAILABLE_MODELS.find((m) => m.name === selectedModel) || AVAILABLE_MODELS[0];
+  const ActiveIcon = activeModelObj.icon;
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -72,42 +106,67 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       {/* Center / Right: Model Selector & Actions */}
       <div className="flex items-center gap-2.5">
         {/* Model Selector Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/15 rounded-pill text-[13px] font-medium text-ink dark:text-on-dark cursor-pointer transition-colors hover:border-hairline-strong dark:hover:border-white/30 shadow-subtle"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/15 rounded-pill text-[13px] font-medium text-ink dark:text-on-dark cursor-pointer transition-colors hover:border-hairline-strong dark:hover:border-white/30 shadow-subtle select-none"
           >
-            <Sprout size={13} className="text-primary dark:text-gradient-mint" />
-            <span className="hidden sm:inline">{selectedModel}</span>
-            <span className="sm:hidden">Model</span>
-            <ChevronDown size={13} className="text-muted dark:text-muted-soft" />
+            <ActiveIcon size={13} className="text-primary dark:text-white flex-shrink-0" />
+            <span>{activeModelObj.name}</span>
+            <ChevronDown size={13} className="text-muted dark:text-muted-soft flex-shrink-0" />
           </button>
 
           {modelDropdownOpen && (
-            <div className="absolute top-[calc(100%+6px)] right-0 w-72 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/15 rounded-2xl shadow-popover p-1.5 z-60 animate-fade-in">
-              {AVAILABLE_MODELS.map((model) => (
-                <div
-                  key={model.id}
-                  onClick={() => {
-                    onSelectModel(model.name);
-                    setModelDropdownOpen(false);
-                  }}
-                  className={`p-2.5 rounded-lg cursor-pointer flex items-center justify-between text-[13px] transition-colors ${
-                    selectedModel === model.name
-                      ? 'bg-canvas-soft dark:bg-surface-strong/30 text-ink dark:text-on-dark font-semibold'
-                      : 'text-ink dark:text-on-dark-soft hover:bg-canvas-soft dark:hover:bg-surface-strong/20 font-normal'
-                  }`}
-                >
-                  <div>
-                    <div>{model.name}</div>
-                    <div className="text-[11px] text-muted dark:text-muted-soft">{model.tag}</div>
-                  </div>
-                  {selectedModel === model.name && (
-                    <Check size={14} className="text-ink dark:text-on-dark" />
-                  )}
-                </div>
-              ))}
+            <div className="absolute top-[calc(100%+6px)] right-0 w-80 bg-surface-card dark:bg-surface-dark-elevated border border-hairline dark:border-white/15 rounded-2xl shadow-popover p-1.5 z-60 animate-fade-in flex flex-col gap-1">
+              {AVAILABLE_MODELS.map((model) => {
+                const isSelected = selectedModel === model.name;
+                const IconComponent = model.icon;
+                return (
+                  <button
+                    key={model.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectModel(model.name);
+                      setModelDropdownOpen(false);
+                    }}
+                    className={`w-full p-2.5 rounded-xl cursor-pointer flex items-start gap-2.5 text-left transition-colors select-none ${
+                      isSelected
+                        ? 'bg-canvas-soft dark:bg-white/10 text-ink dark:text-on-dark font-medium'
+                        : 'text-ink dark:text-on-dark-soft hover:bg-canvas-soft dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        isSelected
+                          ? 'bg-primary text-white dark:bg-white dark:text-ink'
+                          : 'bg-surface-strong dark:bg-white/10 text-muted dark:text-muted-soft'
+                      }`}
+                    >
+                      <IconComponent size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-[13px] ${
+                            isSelected
+                              ? 'font-semibold text-ink dark:text-white'
+                              : 'font-medium text-ink dark:text-on-dark'
+                          }`}
+                        >
+                          {model.name}
+                        </span>
+                        {isSelected && (
+                          <Check size={14} className="text-primary dark:text-white flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted dark:text-muted-soft mt-0.5 leading-snug">
+                        {model.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

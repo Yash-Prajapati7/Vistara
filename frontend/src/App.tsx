@@ -3,7 +3,6 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { ChatHeader } from './components/Chat/ChatHeader';
 import { MessageList } from './components/Chat/MessageList';
 import { ChatInput } from './components/InputDeck/ChatInput';
-import { AtmosphericOrbs } from './components/AtmosphericOrbs';
 import { DeleteConfirmModal } from './components/Modal/DeleteConfirmModal';
 import {
   INITIAL_CONVERSATIONS,
@@ -615,9 +614,6 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen relative bg-canvas dark:bg-canvas-deep overflow-hidden transition-colors duration-200">
-      {/* Signature Atmospheric Background Orbs */}
-      <AtmosphericOrbs />
-
       {/* Left Sidebar */}
       <Sidebar
         conversations={conversations}

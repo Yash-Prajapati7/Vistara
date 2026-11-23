@@ -166,7 +166,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
                           onClick={(e) => handleDelete(conv.id, e)}
                           title={UI_STRINGS.DELETE}
                           aria-label={UI_STRINGS.DELETE}
-                          className="p-1 text-muted dark:text-muted-soft hover:text-semantic-error rounded transition-colors"
+                          className="p-1 text-muted dark:text-muted-soft hover:text-semantic-error dark:hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                         >
                           <Trash2 size={13} />
                         </button>

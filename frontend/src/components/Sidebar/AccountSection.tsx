@@ -305,19 +305,13 @@ export const AccountSection: React.FC<AccountSectionProps> = ({
           {user.initials}
         </div>
 
-        {/* Name and role */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-medium text-ink dark:text-on-dark truncate">
-              {user.name}
-            </span>
-            <span className="badge-pill text-[9px] px-1.5 py-0 leading-tight">
-              {user.tier}
-            </span>
-          </div>
-
-          <span className="text-[11px] text-muted dark:text-muted-soft truncate">
-            {user.role}
+        {/* Name and tier badge */}
+        <div className="flex-1 min-w-0 flex flex-col items-start">
+          <span className="text-[13px] font-medium text-ink dark:text-on-dark truncate w-full text-left leading-tight">
+            {user.name}
+          </span>
+          <span className="badge-pill text-[9px] px-1.5 py-0 leading-tight mt-0.5">
+            {user.tier}
           </span>
         </div>
 

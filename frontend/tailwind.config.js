@@ -26,13 +26,13 @@ export default {
         canvas: {
           DEFAULT: '#f5f5f5',
           soft: '#fafafa',
-          deep: '#0c0a09',
+          deep: '#18181b',
         },
         surface: {
           card: '#ffffff',
           strong: '#f0efed',
-          dark: '#0c0a09',
-          'dark-elevated': '#1c1917',
+          dark: '#1f1f23',
+          'dark-elevated': '#27272a',
         },
         'on-primary': '#ffffff',
         'on-dark': '#ffffff',
