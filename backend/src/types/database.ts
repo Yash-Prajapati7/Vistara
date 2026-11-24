@@ -79,3 +79,14 @@ export interface ChatSummary {
   previewSnippet: string;
   turnCount: number;
 }
+
+/**
+ * Parameters for generating and persisting a chat conversation title.
+ */
+export interface GenerateAndPersistTitleParams {
+  sessionId?: string;
+  prompt: string;
+  hasImage?: boolean;
+  hasVideo?: boolean;
+  userId?: string;
+}

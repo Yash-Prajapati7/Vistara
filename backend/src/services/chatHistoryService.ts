@@ -1,6 +1,7 @@
 import { ChatModel } from '../models/chatModel.js';
-import { ChatDocument, ChatTurn, ChatSummary } from '../types/database.js';
+import { ChatDocument, ChatTurn, ChatSummary, GenerateAndPersistTitleParams } from '../types/database.js';
 import { DiagnosticData, ImageAttachmentPayload, VideoAttachmentPayload } from '../types/pathology.js';
+import { generateConversationTitle } from './aiService.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
 import { logger } from '../utils/logger.js';
@@ -272,6 +273,33 @@ export class ChatHistoryService {
     });
 
     return (result.modifiedCount || 0) > 0;
+  }
+
+  /**
+   * Generates a concise title and persists it to MongoDB if sessionId is provided.
+   */
+  public async generateAndPersistTitle({
+    sessionId,
+    prompt,
+    hasImage = false,
+    hasVideo = false,
+    userId = DB_CONSTANTS.DEFAULT_USER_ID,
+  }: GenerateAndPersistTitleParams): Promise<string> {
+    const generatedTitle = await generateConversationTitle({
+      prompt,
+      hasImage,
+      hasVideo,
+    });
+
+    if (sessionId) {
+      await this.updateChatTitle(sessionId, userId, generatedTitle);
+      logger.info('Generated and persisted AI chat title to MongoDB', {
+        sessionId,
+        title: generatedTitle,
+      });
+    }
+
+    return generatedTitle;
   }
 }
 

@@ -1,7 +1,8 @@
-import { streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { VISTARA_PATHOLOGY_SYSTEM_PROMPT, buildPathologyUserPrompt } from '../prompts/leafAnalysis.prompt.js';
 import { VISTARA_VIDEO_PATHOLOGY_SYSTEM_PROMPT, buildVideoPathologyUserPrompt } from '../prompts/videoAnalysis.prompt.js';
 import { VISTARA_TRANSLATION_SYSTEM_PROMPT, buildTranslationUserPrompt } from '../prompts/translation.prompt.js';
+import { TITLE_GENERATION_SYSTEM_PROMPT, buildTitleUserPrompt } from '../prompts/titleGeneration.prompt.js';
 import { contextService } from './contextService.js';
 import { MODEL_CONFIG } from '../constants/modelConfig.js';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
@@ -103,10 +104,8 @@ export async function streamPathologyDiagnosis({
     ? VISTARA_VIDEO_PATHOLOGY_SYSTEM_PROMPT
     : VISTARA_PATHOLOGY_SYSTEM_PROMPT;
 
-  // Invoke Vercel AI SDK streamText targeting Vercel AI Gateway
   const streamResult = streamText({
-    // Type assertion allows dynamic model identifiers supported by Vercel AI Gateway
-    model: targetModel as unknown as Parameters<typeof streamText>[0]['model'],
+    model: targetModel,
     system: systemPrompt,
     messages: [
       {
@@ -140,7 +139,7 @@ export async function streamPathologyTranslation({
   const prompt = buildTranslationUserPrompt(content, targetLanguage);
 
   const streamResult = streamText({
-    model: targetModel as unknown as Parameters<typeof streamText>[0]['model'],
+    model: targetModel,
     system: VISTARA_TRANSLATION_SYSTEM_PROMPT,
     messages: [
       {
@@ -150,12 +149,61 @@ export async function streamPathologyTranslation({
     ],
     temperature: MODEL_CONFIG.TRANSLATION_TEMPERATURE,
     maxOutputTokens: MODEL_CONFIG.TRANSLATION_MAX_TOKENS,
-    providerOptions: {
-      [SERVER_STRINGS.GATEWAY_OPTION_KEY]: {
-        [SERVER_STRINGS.REASONING_OPTION_KEY]: MODEL_CONFIG.TRANSLATION_REASONING_EFFORT,
-      },
-    },
+    [SERVER_STRINGS.REASONING_OPTION_KEY]: MODEL_CONFIG.TRANSLATION_REASONING_EFFORT,
   });
 
   return streamResult;
+}
+
+export interface GenerateTitleOptions {
+  prompt: string;
+  hasImage?: boolean;
+  hasVideo?: boolean;
+}
+
+/**
+ * Generates a concise, natural conversation title using inclusionai/ling-3.0-flash.
+ * Sets reasoning effort to none for fast, non-streaming completion.
+ */
+export async function generateConversationTitle({
+  prompt,
+  hasImage,
+  hasVideo,
+}: GenerateTitleOptions): Promise<string> {
+  const targetModel = MODEL_CONFIG.TITLE_GENERATION_MODEL_ID;
+
+  if (!prompt.trim()) {
+    if (hasVideo) return 'Field Video Scan';
+    if (hasImage) return 'Crop Specimen Photo';
+    return SERVER_STRINGS.DEFAULT_CHAT_TITLE_FALLBACK;
+  }
+
+  const contextDescription = buildTitleUserPrompt(prompt, hasImage, hasVideo);
+
+  logger.info('Generating conversation title', {
+    targetModel,
+    reasoning: MODEL_CONFIG.TITLE_REASONING_EFFORT,
+    promptPreview: contextDescription.slice(0, 60),
+  });
+
+  const { text } = await generateText({
+    model: targetModel,
+    system: TITLE_GENERATION_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: SERVER_STRINGS.ROLE_USER,
+        content: contextDescription,
+      },
+    ],
+    temperature: MODEL_CONFIG.TITLE_TEMPERATURE,
+    maxOutputTokens: MODEL_CONFIG.TITLE_MAX_TOKENS,
+    [SERVER_STRINGS.REASONING_OPTION_KEY]: MODEL_CONFIG.TITLE_REASONING_EFFORT,
+  });
+
+  const sanitized = text
+    .replace(/["'`]/g, SERVER_STRINGS.EMPTY_STRING)
+    .replace(/^Title:\s*/i, SERVER_STRINGS.EMPTY_STRING)
+    .trim();
+
+  return sanitized || SERVER_STRINGS.DEFAULT_CHAT_TITLE_FALLBACK;
 }

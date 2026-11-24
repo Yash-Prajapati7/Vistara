@@ -149,6 +149,7 @@ export const UI_STRINGS = {
 
   // Backend API Endpoints & Error Messages
   API_CHAT_ENDPOINT: '/api/chat',
+  API_GENERATE_TITLE_ENDPOINT: '/api/chat/title/generate',
   API_TRANSLATE_ENDPOINT: '/api/chat/translate',
   API_HEALTH_ENDPOINT: '/api/health',
   API_SESSION_ENDPOINT: '/api/chat/session',

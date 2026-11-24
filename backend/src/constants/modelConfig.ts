@@ -13,6 +13,12 @@ export const MODEL_CONFIG = {
   TRANSLATION_MAX_TOKENS: 15000,
   TRANSLATION_REASONING_EFFORT: 'low',
 
+  // Title Generation Model Settings (InclusionAI Ling with Zero Reasoning)
+  TITLE_GENERATION_MODEL_ID: 'inclusionai/ling-3.0-flash',
+  TITLE_TEMPERATURE: 0.3,
+  TITLE_MAX_TOKENS: 100,
+  TITLE_REASONING_EFFORT: 'none',
+
   // Inference Hyperparameters
   TEMPERATURE: 0.2,
   TOP_P: 0.9,
@@ -31,6 +37,7 @@ export const MODEL_CONFIG = {
 export const ALLOWED_MODEL_IDS = [
   MODEL_CONFIG.DEFAULT_MODEL_ID,
   MODEL_CONFIG.TRANSLATION_MODEL_ID,
+  MODEL_CONFIG.TITLE_GENERATION_MODEL_ID,
 ] as const;
 
 export type SupportedModelId = (typeof ALLOWED_MODEL_IDS)[number];

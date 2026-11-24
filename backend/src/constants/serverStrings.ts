@@ -14,6 +14,7 @@ export const SERVER_STRINGS = {
   ROUTE_HEALTH: '/api/health',
   ROUTE_CHAT: '/api/chat',
   ROUTE_TRANSLATE: '/translate',
+  ROUTE_GENERATE_TITLE: '/title/generate',
   ROUTE_SESSION: '/api/chat/session',
   ROUTE_SUB_SESSION: '/session/:id',
   ROUTE_SUB_SESSION_TITLE: '/session/:id/title',
@@ -62,9 +63,12 @@ export const SERVER_STRINGS = {
 
   // Translation & Reasoning Options
   MODEL_ID_QWEN: 'alibaba/qwen3.7-flash',
+  MODEL_ID_LING: 'inclusionai/ling-3.0-flash',
   GATEWAY_OPTION_KEY: 'gateway',
   REASONING_OPTION_KEY: 'reasoning',
   REASONING_EFFORT_LOW: 'low',
+  REASONING_EFFORT_NONE: 'none',
+  DEFAULT_CHAT_TITLE_FALLBACK: 'New Conversation',
   TRANSLATION_USER_PROMPT_PREFIX: 'Translate diagnosis to ',
 
   // Media MIME Types & Encodings

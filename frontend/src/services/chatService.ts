@@ -188,6 +188,26 @@ export class ChatService {
   }
 
   /**
+   * Generates a concise, natural conversation title using inclusionai/ling-3.0-flash via HTTP POST.
+   */
+  public async generateChatTitle(
+    sessionId: string,
+    prompt: string,
+    hasImage: boolean = false,
+    hasVideo: boolean = false,
+    userId: string = UI_STRINGS.DEFAULT_USER_ID
+  ): Promise<string | undefined> {
+    const response = await axios.post(UI_STRINGS.API_GENERATE_TITLE_ENDPOINT, {
+      sessionId,
+      prompt,
+      hasImage,
+      hasVideo,
+      userId,
+    });
+    return response.data?.title;
+  }
+
+  /**
    * Performs a health check against the backend service.
    */
   public async checkHealth() {

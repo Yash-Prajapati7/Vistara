@@ -351,10 +351,20 @@ export const App: React.FC = () => {
       videoAttachment: video,
     };
 
-    // Update conversation title if it's currently generic
+    // Generate intelligent AI title for new conversation using ling-3.0-flash
     if (activeConversation && (activeConversation.title === UI_STRINGS.DEFAULT_CASE_TITLE || activeMessages.length === 0)) {
-      const derivedTitle = deriveChatTitle(text, Boolean(image), Boolean(video));
-      handleRenameConversation(activeConversationId, derivedTitle);
+      chatService
+        .generateChatTitle(activeConversationId, text, Boolean(image), Boolean(video))
+        .then((generatedTitle) => {
+          if (generatedTitle) {
+            handleRenameConversation(activeConversationId, generatedTitle);
+          }
+        })
+        .catch(() => {
+          // Graceful fallback if network is unreachable
+          const fallbackTitle = deriveChatTitle(text, Boolean(image), Boolean(video));
+          handleRenameConversation(activeConversationId, fallbackTitle);
+        });
     }
 
     const nextMessages = [...activeMessages, newUserMessage];

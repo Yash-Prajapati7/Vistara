@@ -57,6 +57,45 @@ chatRouter.post(
 );
 
 /**
+ * POST /api/chat/title/generate
+ * Generates an intelligent, natural conversation title using ling-3.0-flash
+ * and persists it to MongoDB via ChatHistoryService.
+ */
+chatRouter.post(
+  SERVER_STRINGS.ROUTE_GENERATE_TITLE,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { sessionId, prompt, hasImage, hasVideo, userId } = req.body;
+
+      if (!prompt && !hasImage && !hasVideo) {
+        res.status(400).json({ error: SERVER_STRINGS.ERR_MISSING_PROMPT });
+        return;
+      }
+
+      const title = await chatHistoryService.generateAndPersistTitle({
+        sessionId,
+        prompt: prompt || SERVER_STRINGS.EMPTY_STRING,
+        hasImage: Boolean(hasImage),
+        hasVideo: Boolean(hasVideo),
+        userId,
+      });
+
+      res.status(200).json({
+        status: SERVER_STRINGS.STATUS_SUCCESS,
+        title,
+        sessionId,
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to generate chat title', error);
+      res.status(500).json({
+        error: SERVER_STRINGS.STATUS_ERROR,
+        title: SERVER_STRINGS.DEFAULT_CHAT_TITLE_FALLBACK,
+      });
+    }
+  }
+);
+
+/**
  * GET /api/chat/user/:userId
  * Retrieves all chat sessions for a specific user, sorted newest first.
  * Excludes heavy base64 strings for fast loading.
