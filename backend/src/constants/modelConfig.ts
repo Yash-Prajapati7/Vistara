@@ -1,7 +1,5 @@
 /**
  * Model and inference configuration constants for Vistara backend.
- * Configured for Vercel AI Gateway and alibaba/qwen3.7-flash.
- * Open-ended to support any plant disease and pathogen classification.
  */
 export const MODEL_CONFIG = {
   // Target Vision-Language Model

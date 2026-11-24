@@ -6,7 +6,6 @@ let isConnected = false;
 
 /**
  * Connects to MongoDB cluster with resilient error handling and event listeners.
- * Strictly adheres to centralized string constants and zero-emoji guidelines.
  */
 export async function connectDatabase(): Promise<void> {
   const uri = process.env.MONGODB_URI || DB_CONSTANTS.DEFAULT_MONGODB_URI;
@@ -34,7 +33,7 @@ export async function connectDatabase(): Promise<void> {
   });
 
   try {
-    logger.info(`Connecting to MongoDB at: ${uri}`);
+    logger.info('Connecting to MongoDB');
     await mongoose.connect(uri, {
       dbName,
       serverSelectionTimeoutMS: 5000,

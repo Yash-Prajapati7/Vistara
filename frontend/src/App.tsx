@@ -5,9 +5,7 @@ import { MessageList } from './components/Chat/MessageList';
 import { ChatInput } from './components/InputDeck/ChatInput';
 import { DeleteConfirmModal } from './components/Modal/DeleteConfirmModal';
 import {
-  INITIAL_CONVERSATIONS,
   INITIAL_USER_PROFILE,
-  SAMPLE_INITIAL_MESSAGES,
 } from './data/mockData';
 import { ChatMessage, ConversationMeta, DiagnosticData, ImageAttachment, VideoAttachment } from './types/chat';
 import { UI_STRINGS } from './constants/uiStrings';
@@ -91,10 +89,31 @@ const deriveChatTitle = (prompt: string, hasImage: boolean, hasVideo: boolean = 
   return titleCased.length > 36 ? `${titleCased.substring(0, 33)}...` : titleCased;
 };
 
+/**
+ * Factory creating a fresh blank diagnostic conversation.
+ */
+const createInitialBlankSession = (): { id: string; meta: ConversationMeta } => {
+  const id = `${UI_STRINGS.PREFIX_CONVERSATION}${Date.now()}`;
+  return {
+    id,
+    meta: {
+      id,
+      title: UI_STRINGS.DEFAULT_CASE_TITLE,
+      updatedAt: UI_STRINGS.TIME_JUST_NOW,
+      previewSnippet: UI_STRINGS.FRESH_SESSION_SNIPPET,
+      timeBucket: UI_STRINGS.TIME_BUCKET_TODAY,
+      cropType: UI_STRINGS.CROP_UNSPECIFIED,
+    },
+  };
+};
+
 export const App: React.FC = () => {
-  const [conversations, setConversations] = useState<ConversationMeta[]>(INITIAL_CONVERSATIONS);
-  const [activeConversationId, setActiveConversationId] = useState<string>(UI_STRINGS.DEFAULT_CONVERSATION_ID);
-  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>(SAMPLE_INITIAL_MESSAGES);
+  const [initialSession] = useState(() => createInitialBlankSession());
+  const [conversations, setConversations] = useState<ConversationMeta[]>([initialSession.meta]);
+  const [activeConversationId, setActiveConversationId] = useState<string>(initialSession.id);
+  const [messagesMap, setMessagesMap] = useState<Record<string, ChatMessage[]>>({
+    [initialSession.id]: [],
+  });
   const [userProfile] = useState(INITIAL_USER_PROFILE);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedModel, setSelectedModel] = useState<string>(UI_STRINGS.MODEL_DEFAULT);
@@ -112,7 +131,7 @@ export const App: React.FC = () => {
     localStorage.setItem(UI_STRINGS.STORAGE_KEY_RESPONSE_LANGUAGE, newLanguage);
   };
 
-  // Sync user conversations from MongoDB on initial mount
+  // Sync user conversations from MongoDB on initial mount without overriding active blank session
   useEffect(() => {
     let isMounted = true;
     chatService
@@ -131,56 +150,15 @@ export const App: React.FC = () => {
           cropType: c.cropType,
         }));
 
-        setConversations(mapped);
-        const firstSessionId = mapped[0].id;
-        setActiveConversationId(firstSessionId);
-
-        // Load full messages for first conversation
-        chatService
-          .loadSessionHistory(firstSessionId)
-          .then((sess: { turns?: RawTurn[] }) => {
-            if (!isMounted || !sess?.turns) return;
-            const messages: ChatMessage[] = [];
-            for (const turn of sess.turns) {
-              const timeStr = formatTimestamp(turn.timestamp);
-
-              messages.push({
-                id: `${UI_STRINGS.PREFIX_TURN_USER}${turn.turnId}`,
-                role: UI_STRINGS.ROLE_USER,
-                content: turn.prompt,
-                timestamp: timeStr,
-                imageAttachment: turn.imageBase64
-                  ? {
-                      id: `${UI_STRINGS.PREFIX_TURN_IMAGE}${turn.turnId}`,
-                      name: turn.imageMeta?.name || UI_STRINGS.DEFAULT_SPECIMEN_NAME,
-                      url: turn.imageBase64,
-                      sizeFormatted: UI_STRINGS.EMPTY_STRING,
-                    }
-                  : undefined,
-                videoAttachment: turn.videoBase64
-                  ? {
-                      id: `${UI_STRINGS.PREFIX_TURN_VIDEO}${turn.turnId}`,
-                      name: turn.videoMeta?.name || UI_STRINGS.DEFAULT_VIDEO_NAME,
-                      url: turn.videoBase64,
-                      sizeFormatted: UI_STRINGS.EMPTY_STRING,
-                    }
-                  : undefined,
-              });
-
-              if (turn.completion) {
-                messages.push({
-                  id: `${UI_STRINGS.PREFIX_TURN_ASSISTANT}${turn.turnId}`,
-                  role: UI_STRINGS.ROLE_ASSISTANT,
-                  content: turn.completion,
-                  timestamp: timeStr,
-                  diagnosticData: turn.diagnosticData,
-                  thinkingContent: turn.thinkingContent,
-                });
-              }
-            }
-            setMessagesMap((prev) => ({ ...prev, [firstSessionId]: messages }));
-          })
-          .catch(() => {});
+        // Preserve active blank session at top of sidebar history, followed by past conversations
+        setConversations((prev) => {
+          const blankConv = prev.find(
+            (c) =>
+              c.title === UI_STRINGS.DEFAULT_CASE_TITLE ||
+              c.previewSnippet === UI_STRINGS.FRESH_SESSION_SNIPPET
+          );
+          return blankConv ? [blankConv, ...mapped] : mapped;
+        });
       })
       .catch(() => {});
 

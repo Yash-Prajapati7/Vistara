@@ -1,6 +1,5 @@
 /**
  * Centralized database constants for MongoDB collections, fields, and queries.
- * Strictly adheres to .agents/agents.md - zero plain strings in handlers or models.
  */
 export const DB_CONSTANTS = {
   // Collections
