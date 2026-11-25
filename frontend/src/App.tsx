@@ -716,6 +716,7 @@ export const App: React.FC = () => {
         <ChatHeader
           title={activeConversation?.title || UI_STRINGS.APP_TITLE}
           isSidebarOpen={isSidebarOpen}
+          hasActiveSession={activeMessages.length > 0}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onClearChat={handleClearChat}
           selectedModel={selectedModel}

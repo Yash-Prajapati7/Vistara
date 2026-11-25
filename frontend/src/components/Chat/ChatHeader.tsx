@@ -17,6 +17,7 @@ import { useTheme } from '../../context/ThemeContext';
 interface ChatHeaderProps {
   title: string;
   isSidebarOpen: boolean;
+  hasActiveSession: boolean;
   onToggleSidebar: () => void;
   onClearChat: () => void;
   selectedModel: string;
@@ -47,6 +48,7 @@ const AVAILABLE_MODELS = [
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   title,
   isSidebarOpen,
+  hasActiveSession,
   onToggleSidebar,
   onClearChat,
   selectedModel,
@@ -56,6 +58,12 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   const [copiedShare, setCopiedShare] = useState(false);
   const { isDark, toggleTheme } = useTheme();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasActiveSession && copiedShare) {
+      setCopiedShare(false);
+    }
+  }, [hasActiveSession, copiedShare]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -186,31 +194,35 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           )}
         </button>
 
-        {/* Share Button */}
-        <button
-          type="button"
-          className="btn-ghost-icon"
-          onClick={handleShare}
-          title={copiedShare ? UI_STRINGS.COPIED : UI_STRINGS.SHARE}
-          aria-label={UI_STRINGS.SHARE}
-        >
-          {copiedShare ? (
-            <Check size={16} className="text-semantic-success" />
-          ) : (
-            <Share2 size={16} strokeWidth={1.8} />
-          )}
-        </button>
+        {hasActiveSession && (
+          <>
+            {/* Share Button */}
+            <button
+              type="button"
+              className="btn-ghost-icon"
+              onClick={handleShare}
+              title={copiedShare ? UI_STRINGS.COPIED : UI_STRINGS.SHARE}
+              aria-label={UI_STRINGS.SHARE}
+            >
+              {copiedShare ? (
+                <Check size={16} className="text-semantic-success" />
+              ) : (
+                <Share2 size={16} strokeWidth={1.8} />
+              )}
+            </button>
 
-        {/* Clear Conversation Button */}
-        <button
-          type="button"
-          className="btn-ghost-icon"
-          onClick={onClearChat}
-          title={UI_STRINGS.CLEAR_CONVERSATION}
-          aria-label={UI_STRINGS.CLEAR_CONVERSATION}
-        >
-          <Trash2 size={16} strokeWidth={1.8} />
-        </button>
+            {/* Clear Conversation Button */}
+            <button
+              type="button"
+              className="btn-ghost-icon"
+              onClick={onClearChat}
+              title={UI_STRINGS.CLEAR_CONVERSATION}
+              aria-label={UI_STRINGS.CLEAR_CONVERSATION}
+            >
+              <Trash2 size={16} strokeWidth={1.8} />
+            </button>
+          </>
+        )}
       </div>
     </header>
   );
