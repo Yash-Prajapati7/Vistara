@@ -19,6 +19,7 @@ import {
 import { ChatMessage } from '../../types/chat';
 import { UI_STRINGS } from '../../constants/uiStrings';
 import { TranslationDropdown } from './TranslationDropdown';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -42,91 +43,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate,
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
-  };
-
-  // Render markdown-like sections (headers, bullet points, bold tags)
-  const renderFormattedContent = (content: string) => {
-    const lines = content.split('\n');
-    return lines.map((line, lineIdx) => {
-      // Header 3 (### )
-      if (line.startsWith('### ')) {
-        return (
-          <h3
-            key={lineIdx}
-            className="font-display text-[22px] font-normal tracking-tight mt-3.5 mb-2 text-ink dark:text-on-dark"
-          >
-            {line.replace('### ', '')}
-          </h3>
-        );
-      }
-
-      // Header 4 (#### )
-      if (line.startsWith('#### ')) {
-        return (
-          <h4
-            key={lineIdx}
-            className="font-body text-[15px] font-semibold tracking-wide mt-3 mb-1.5 text-ink dark:text-on-dark"
-          >
-            {line.replace('#### ', '')}
-          </h4>
-        );
-      }
-
-      // Bullet points (* or -)
-      if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
-        const bulletText = line.trim().substring(2);
-        return (
-          <li
-            key={lineIdx}
-            className="ml-5 mb-1 leading-relaxed text-[15px] text-body-strong dark:text-on-dark/90 list-disc"
-          >
-            {parseBold(bulletText)}
-          </li>
-        );
-      }
-
-      // Numbered lists (1. 2. etc)
-      if (/^\d+\.\s/.test(line.trim())) {
-        return (
-          <div
-            key={lineIdx}
-            className="ml-3.5 mb-1.5 leading-relaxed text-[15px] text-body-strong dark:text-on-dark/90"
-          >
-            {parseBold(line)}
-          </div>
-        );
-      }
-
-      // Empty line spacing
-      if (!line.trim()) {
-        return <div key={lineIdx} className="h-2" />;
-      }
-
-      // Standard paragraph
-      return (
-        <p
-          key={lineIdx}
-          className="leading-relaxed text-[15px] mb-1.5 text-body-strong dark:text-on-dark/90 tracking-[0.14px]"
-        >
-          {parseBold(line)}
-        </p>
-      );
-    });
-  };
-
-  // Helper for bold **text**
-  const parseBold = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return (
-          <strong key={i} className="font-semibold text-ink dark:text-white">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      return part;
-    });
   };
 
   return (
@@ -156,7 +72,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate,
         </div>
 
         {/* Message Content Area */}
-        <div className="flex flex-col gap-2 min-w-[240px]">
+        <div className="flex flex-col gap-2 min-w-0 max-w-[calc(100%-2.75rem)]">
           {/* Header with name and timestamp */}
           <div
             className={`flex items-center gap-2 text-xs text-muted dark:text-muted-soft ${
@@ -285,7 +201,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, onRegenerate,
 
             {/* Formatted Text Content */}
             {message.content ? (
-              renderFormattedContent(message.content)
+              isUser ? (
+                <div className="whitespace-pre-wrap leading-relaxed text-[15px] text-body-strong dark:text-on-dark/90 tracking-[0.14px] break-words">
+                  {message.content}
+                </div>
+              ) : (
+                <MarkdownRenderer content={message.content} />
+              )
             ) : (
               !isUser && message.isStreaming && !isThinkingActive && (
                 <div className="flex items-center gap-2 text-xs text-muted dark:text-muted-soft py-1">

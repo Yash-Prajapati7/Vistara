@@ -317,13 +317,14 @@ export const App: React.FC = () => {
 
   // Send message and trigger assistant response
   const handleSendMessage = (text: string, image?: ImageAttachment, video?: VideoAttachment) => {
+    const safeText = text.slice(0, UI_STRINGS.MAX_PROMPT_LENGTH);
     const userMessageId = `${UI_STRINGS.PREFIX_MSG_USER}${Date.now()}`;
     const timeFormatted = formatTimestamp();
 
     const newUserMessage: ChatMessage = {
       id: userMessageId,
       role: UI_STRINGS.ROLE_USER,
-      content: text,
+      content: safeText,
       timestamp: timeFormatted,
       imageAttachment: image,
       videoAttachment: video,
@@ -332,7 +333,7 @@ export const App: React.FC = () => {
     // Generate intelligent AI title for new conversation using ling-3.0-flash
     if (activeConversation && (activeConversation.title === UI_STRINGS.DEFAULT_CASE_TITLE || activeMessages.length === 0)) {
       chatService
-        .generateChatTitle(activeConversationId, text, Boolean(image), Boolean(video))
+        .generateChatTitle(activeConversationId, safeText, Boolean(image), Boolean(video))
         .then((generatedTitle) => {
           if (generatedTitle) {
             handleRenameConversation(activeConversationId, generatedTitle);
@@ -340,7 +341,7 @@ export const App: React.FC = () => {
         })
         .catch(() => {
           // Graceful fallback if network is unreachable
-          const fallbackTitle = deriveChatTitle(text, Boolean(image), Boolean(video));
+          const fallbackTitle = deriveChatTitle(safeText, Boolean(image), Boolean(video));
           handleRenameConversation(activeConversationId, fallbackTitle);
         });
     }
@@ -373,7 +374,7 @@ export const App: React.FC = () => {
     chatService.streamChatMessage({
       sessionId: activeConversationId,
       userId: UI_STRINGS.DEFAULT_USER_ID,
-      prompt: text,
+      prompt: safeText,
       responseLanguage,
       imageAttachment: image,
       videoAttachment: video,

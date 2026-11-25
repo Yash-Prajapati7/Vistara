@@ -46,7 +46,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
       processFile(file);
     }
     // Reset file input value so same file can be re-uploaded if desired
-    e.target.value = '';
+    e.target.value = UI_STRINGS.EMPTY_STRING;
   };
 
   const processFile = (file: File) => {
@@ -112,7 +112,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === UI_STRINGS.KEY_ENTER && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
@@ -121,7 +121,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   const handleSubmit = () => {
     if ((text.trim() || stagedImage || stagedVideo) && !disabled) {
       onSendMessage(text.trim(), stagedImage, stagedVideo);
-      setText('');
+      setText(UI_STRINGS.EMPTY_STRING);
       setStagedImage(undefined);
       setStagedVideo(undefined);
       if (textareaRef.current) {
@@ -191,6 +191,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
           <textarea
             ref={textareaRef}
             rows={1}
+            maxLength={UI_STRINGS.MAX_PROMPT_LENGTH}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}

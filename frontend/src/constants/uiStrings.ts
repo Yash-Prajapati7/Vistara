@@ -92,6 +92,7 @@ export const UI_STRINGS = {
   EVENT_MOUSEDOWN: 'mousedown',
   EVENT_KEYDOWN: 'keydown',
   KEY_ESCAPE: 'Escape',
+  KEY_ENTER: 'Enter',
   THEME_CONTEXT_ERROR: 'useTheme must be used within a ThemeProvider',
 
   // User Roles & Message Roles
@@ -199,6 +200,7 @@ export const UI_STRINGS = {
   FILE_PREFIX_IMAGE: 'image/',
   FILE_PREFIX_VIDEO: 'video/',
   MAX_FILE_SIZE_BYTES: 52428800, // 50 MB
+  MAX_PROMPT_LENGTH: 10000,
   ERR_FILE_TOO_LARGE: 'File exceeds maximum upload size (50 MB).',
   VIDEO_PLAYER_TITLE: 'Field Specimen Video',
 
