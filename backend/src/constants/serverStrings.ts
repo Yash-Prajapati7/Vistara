@@ -44,6 +44,8 @@ export const SERVER_STRINGS = {
   EVENT_DIAGNOSTIC_DATA: 'diagnostic-data',
   EVENT_DONE: 'done',
   EVENT_ERROR: 'error',
+  EVENT_CLOSE: 'close',
+  ABORT_ERROR_NAME: 'AbortError',
   SSE_DATA_PREFIX: 'data: ',
   SSE_DOUBLE_NEWLINE: '\n\n',
 
@@ -114,4 +116,5 @@ export const SERVER_STRINGS = {
   LOG_PREFIX_ERROR: '[ERROR]',
   LOG_PREFIX_DEBUG: '[DEBUG]',
   LOG_SERVER_STARTED: 'Vistara agricultural diagnostic server listening on port',
+  LOG_STREAM_ABORTED: 'Streaming aborted by client',
 } as const;

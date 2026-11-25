@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { ChatHeader } from './components/Chat/ChatHeader';
 import { MessageList } from './components/Chat/MessageList';
@@ -125,6 +125,60 @@ export const App: React.FC = () => {
   });
   const [isStreaming, setIsStreaming] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  /**
+   * Aborts the currently active SSE stream (diagnosis or translation) and resets streaming state.
+   */
+  const handleStopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+  };
+
+  /**
+   * Marks an in-progress assistant message as finalized after user-initiated cancellation,
+   * preserving any partial content or reasoning already received.
+   */
+  const finalizeAbortedAssistantMessage = (
+    targetConversationId: string,
+    assistantMessageId: string,
+    controller: AbortController
+  ) => {
+    if (abortControllerRef.current === controller) {
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+    setMessagesMap((prev) => {
+      const currentList = prev[targetConversationId] || [];
+      return {
+        ...prev,
+        [targetConversationId]: currentList.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content:
+                  msg.content ||
+                  (msg.thinkingContent
+                    ? UI_STRINGS.EMPTY_STRING
+                    : UI_STRINGS.RESPONSE_STOPPED_NOTICE),
+                isStreaming: false,
+                isThinking: false,
+              }
+            : msg
+        ),
+      };
+    });
+  };
 
   const handleSelectLanguage = (newLanguage: string) => {
     setResponseLanguage(newLanguage);
@@ -189,6 +243,10 @@ export const App: React.FC = () => {
       return;
     }
 
+    if (isStreaming) {
+      handleStopStreaming();
+    }
+
     const newId = `${UI_STRINGS.PREFIX_CONVERSATION}${Date.now()}`;
     const newConv: ConversationMeta = {
       id: newId,
@@ -206,6 +264,9 @@ export const App: React.FC = () => {
 
   // Switch active conversation & remove uncommitted blank new chats
   const handleSelectConversation = (id: string) => {
+    if (id !== activeConversationId && isStreaming) {
+      handleStopStreaming();
+    }
     // Purge any uncommitted blank new chats from history list when user clicks on a chat
     setConversations((prev) => prev.filter((c) => c.id === id || !isBlankNewChat(c)));
 
@@ -263,6 +324,9 @@ export const App: React.FC = () => {
 
   // Delete conversation from UI state and permanently from MongoDB database
   const handleDeleteConversation = (id: string) => {
+    if (id === activeConversationId && isStreaming) {
+      handleStopStreaming();
+    }
     const updated = conversations.filter((c) => c.id !== id);
     setConversations(updated);
 
@@ -353,6 +417,10 @@ export const App: React.FC = () => {
     }));
 
     // Trigger live vision-language diagnostic streaming via backend
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const targetConversationId = activeConversationId;
     setIsStreaming(true);
 
     const assistantMessageId = `${UI_STRINGS.PREFIX_MSG_ASSISTANT}${Date.now()}`;
@@ -368,24 +436,25 @@ export const App: React.FC = () => {
 
     setMessagesMap((prev) => ({
       ...prev,
-      [activeConversationId]: [...nextMessages, initialAssistantMessage],
+      [targetConversationId]: [...nextMessages, initialAssistantMessage],
     }));
 
     chatService.streamChatMessage({
-      sessionId: activeConversationId,
+      sessionId: targetConversationId,
       userId: UI_STRINGS.DEFAULT_USER_ID,
       prompt: safeText,
       responseLanguage,
       imageAttachment: image,
       videoAttachment: video,
       modelId: UI_STRINGS.MODEL_ID_MIMO,
+      signal: controller.signal,
       callbacks: {
         onThinkingDelta: (delta: string) => {
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -399,10 +468,10 @@ export const App: React.FC = () => {
         },
         onTextDelta: (delta: string) => {
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -417,14 +486,14 @@ export const App: React.FC = () => {
         onDiagnosticData: (diagnosticData: DiagnosticData, markdownReport: string) => {
           if (diagnosticData?.crop && diagnosticData?.disease) {
             const diagnosedTitle = `${diagnosticData.crop} ${diagnosticData.disease} Analysis`;
-            handleRenameConversation(activeConversationId, diagnosedTitle);
+            handleRenameConversation(targetConversationId, diagnosedTitle);
           }
 
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -438,12 +507,15 @@ export const App: React.FC = () => {
           });
         },
         onError: (errorMessage: string) => {
+          if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
           setIsStreaming(false);
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -458,13 +530,19 @@ export const App: React.FC = () => {
             };
           });
         },
+        onAbort: () => {
+          finalizeAbortedAssistantMessage(targetConversationId, assistantMessageId, controller);
+        },
         onComplete: () => {
+          if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
           setIsStreaming(false);
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? { ...msg, isStreaming: false, isThinking: false }
                   : msg
@@ -498,6 +576,10 @@ export const App: React.FC = () => {
   const handleTranslateMessage = (message: ChatMessage, targetLanguage: string) => {
     if (isStreaming || !message.content.trim()) return;
 
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const targetConversationId = activeConversationId;
     setIsStreaming(true);
 
     const assistantMessageId = `${UI_STRINGS.PREFIX_MSG_ASSISTANT}${Date.now()}`;
@@ -514,21 +596,22 @@ export const App: React.FC = () => {
 
     setMessagesMap((prev) => ({
       ...prev,
-      [activeConversationId]: [...(prev[activeConversationId] || []), initialAssistantMessage],
+      [targetConversationId]: [...(prev[targetConversationId] || []), initialAssistantMessage],
     }));
 
     chatService.streamTranslation({
-      sessionId: activeConversationId,
+      sessionId: targetConversationId,
       userId: UI_STRINGS.DEFAULT_USER_ID,
       content: message.content,
       targetLanguage,
+      signal: controller.signal,
       callbacks: {
         onTextDelta: (delta: string) => {
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -541,10 +624,10 @@ export const App: React.FC = () => {
         },
         onDiagnosticData: (diagnosticData: DiagnosticData, markdownReport: string) => {
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -557,12 +640,15 @@ export const App: React.FC = () => {
           });
         },
         onError: (errorMessage: string) => {
+          if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
           setIsStreaming(false);
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -576,13 +662,19 @@ export const App: React.FC = () => {
             };
           });
         },
+        onAbort: () => {
+          finalizeAbortedAssistantMessage(targetConversationId, assistantMessageId, controller);
+        },
         onComplete: () => {
+          if (abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
           setIsStreaming(false);
           setMessagesMap((prev) => {
-            const currentList = prev[activeConversationId] || [];
+            const currentList = prev[targetConversationId] || [];
             return {
               ...prev,
-              [activeConversationId]: currentList.map((msg) =>
+              [targetConversationId]: currentList.map((msg) =>
                 msg.id === assistantMessageId
                   ? {
                       ...msg,
@@ -647,7 +739,12 @@ export const App: React.FC = () => {
         />
 
         {/* Center Floating Input Deck */}
-        <ChatInput onSendMessage={handleSendMessage} disabled={isStreaming} />
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isStreaming}
+          isStreaming={isStreaming}
+          onStopStreaming={handleStopStreaming}
+        />
       </main>
 
       {/* Delete Conversation Confirmation Modal */}

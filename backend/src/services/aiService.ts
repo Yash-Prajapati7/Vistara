@@ -16,15 +16,17 @@ export interface PathologyStreamRequest {
   image?: ImageAttachmentPayload;
   video?: VideoAttachmentPayload;
   modelId?: string;
+  abortSignal?: AbortSignal;
 }
 
 export interface TranslationStreamRequest {
   content: string;
   targetLanguage: string;
+  abortSignal?: AbortSignal;
 }
 
 /**
- * Invokes the Vercel AI SDK with xiaomi/mimo-v2.6-flash via Vercel AI Gateway.
+ * Invokes the Vercel AI SDK.
  * Supports image and native video input with specialized video pathology prompts.
  * Injects prompt history array and last model response for context understanding.
  */
@@ -35,6 +37,7 @@ export async function streamPathologyDiagnosis({
   image,
   video,
   modelId,
+  abortSignal,
 }: PathologyStreamRequest) {
   const targetModel = modelId || process.env.AI_MODEL_ID || MODEL_CONFIG.DEFAULT_MODEL_ID;
 
@@ -115,6 +118,7 @@ export async function streamPathologyDiagnosis({
     ],
     temperature: MODEL_CONFIG.TEMPERATURE,
     maxOutputTokens: MODEL_CONFIG.MAX_TOKENS,
+    abortSignal,
   });
 
   return streamResult;
@@ -127,6 +131,7 @@ export async function streamPathologyDiagnosis({
 export async function streamPathologyTranslation({
   content,
   targetLanguage,
+  abortSignal,
 }: TranslationStreamRequest) {
   const targetModel = MODEL_CONFIG.TRANSLATION_MODEL_ID;
 
@@ -150,6 +155,7 @@ export async function streamPathologyTranslation({
     temperature: MODEL_CONFIG.TRANSLATION_TEMPERATURE,
     maxOutputTokens: MODEL_CONFIG.TRANSLATION_MAX_TOKENS,
     [SERVER_STRINGS.REASONING_OPTION_KEY]: MODEL_CONFIG.TRANSLATION_REASONING_EFFORT,
+    abortSignal,
   });
 
   return streamResult;

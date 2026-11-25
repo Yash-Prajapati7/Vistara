@@ -8,6 +8,7 @@ export interface StreamCallbacks {
   onDiagnosticData: (data: DiagnosticData, markdownReport: string) => void;
   onError: (error: string) => void;
   onComplete: () => void;
+  onAbort?: () => void;
 }
 
 export interface SendMessageParams {
@@ -18,6 +19,7 @@ export interface SendMessageParams {
   imageAttachment?: ImageAttachment;
   videoAttachment?: VideoAttachment;
   modelId?: string;
+  signal?: AbortSignal;
   callbacks: StreamCallbacks;
 }
 
@@ -27,6 +29,7 @@ export interface SendTranslationParams {
   content: string;
   targetLanguage: string;
   targetLanguageCode?: string;
+  signal?: AbortSignal;
   callbacks: StreamCallbacks;
 }
 
@@ -35,6 +38,118 @@ export interface SendTranslationParams {
  * Adheres strictly to the Centralized String Constants Policy from .agents/agents.md.
  */
 export class ChatService {
+  /**
+   * Shared SSE streaming helper using Axios progress tracking and AbortSignal support.
+   */
+  private async streamSseRequest(
+    endpoint: string,
+    payload: Record<string, unknown>,
+    callbacks: StreamCallbacks,
+    signal?: AbortSignal
+  ): Promise<void> {
+    let lastProcessedIndex = 0;
+    let streamFinished = false;
+
+    const finishOnce = () => {
+      if (!streamFinished) {
+        streamFinished = true;
+        callbacks.onComplete();
+      }
+    };
+
+    try {
+      await axios.post(endpoint, payload, {
+        headers: {
+          [UI_STRINGS.HTTP_HEADER_CONTENT_TYPE]: UI_STRINGS.HTTP_MIME_JSON,
+        },
+        responseType: UI_STRINGS.HTTP_RESPONSE_TYPE_TEXT,
+        signal,
+        onDownloadProgress: (progressEvent: AxiosProgressEvent) => {
+          if (signal?.aborted || streamFinished) {
+            return;
+          }
+
+          const xhr = progressEvent.event?.target as XMLHttpRequest | undefined;
+          const currentText = xhr
+            ? xhr.responseText
+            : (progressEvent as unknown as { responseText?: string }).responseText || UI_STRINGS.EMPTY_STRING;
+
+          if (!currentText || currentText.length <= lastProcessedIndex) {
+            return;
+          }
+
+          const newChunk = currentText.slice(lastProcessedIndex);
+          lastProcessedIndex = currentText.length;
+
+          const lines = newChunk.split(UI_STRINGS.NEWLINE_SEPARATOR);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith(UI_STRINGS.SSE_DATA_PREFIX)) {
+              const jsonStr = trimmed.slice(UI_STRINGS.SSE_DATA_PREFIX.length);
+              try {
+                const event = JSON.parse(jsonStr);
+
+                if (event.type === UI_STRINGS.SSE_EVENT_THINKING_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
+                  callbacks.onThinkingDelta?.(event.text);
+                } else if (event.type === UI_STRINGS.SSE_EVENT_TEXT_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
+                  callbacks.onTextDelta(event.text);
+                } else if (event.type === UI_STRINGS.SSE_EVENT_DIAGNOSTIC_DATA && event.diagnosticData) {
+                  callbacks.onDiagnosticData(event.diagnosticData, event.markdownReport || UI_STRINGS.EMPTY_STRING);
+                } else if (event.type === UI_STRINGS.SSE_EVENT_DONE) {
+                  finishOnce();
+                } else if (event.type === UI_STRINGS.SSE_EVENT_ERROR) {
+                  if (!streamFinished) {
+                    streamFinished = true;
+                    callbacks.onError(event.error || UI_STRINGS.API_STREAM_ERROR);
+                  }
+                }
+              } catch {
+                // Incomplete JSON chunk across network boundaries; handled on subsequent chunks
+              }
+            }
+          }
+        },
+      });
+
+      if (!signal?.aborted) {
+        finishOnce();
+      }
+    } catch (error: unknown) {
+      const isCanceled =
+        Boolean(signal?.aborted) ||
+        axios.isCancel(error) ||
+        (error instanceof Error &&
+          (error.name === UI_STRINGS.ERR_NAME_ABORT ||
+            error.name === UI_STRINGS.ERR_NAME_CANCELED));
+
+      if (isCanceled) {
+        if (!streamFinished) {
+          streamFinished = true;
+          callbacks.onAbort?.();
+        }
+        return;
+      }
+
+      if (streamFinished) {
+        return;
+      }
+      streamFinished = true;
+
+      if (axios.isAxiosError(error)) {
+        const errorMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          UI_STRINGS.API_ERROR_NETWORK;
+        callbacks.onError(errorMsg);
+      } else if (error instanceof Error) {
+        callbacks.onError(error.message);
+      } else {
+        callbacks.onError(UI_STRINGS.API_ERROR_NETWORK);
+      }
+    }
+  }
+
   /**
    * Streams a chat/diagnostic response from the backend using Axios with progress tracking.
    * Persists the user prompt and image base64 into MongoDB, and saves completion upon finish.
@@ -47,10 +162,9 @@ export class ChatService {
     imageAttachment,
     videoAttachment,
     modelId,
+    signal,
     callbacks,
   }: SendMessageParams): Promise<void> {
-    let lastProcessedIndex = 0;
-
     const payload = {
       sessionId,
       userId,
@@ -75,68 +189,7 @@ export class ChatService {
         : undefined,
     };
 
-    try {
-      await axios.post(UI_STRINGS.API_CHAT_ENDPOINT, payload, {
-        headers: {
-          [UI_STRINGS.HTTP_HEADER_CONTENT_TYPE]: UI_STRINGS.HTTP_MIME_JSON,
-        },
-        responseType: UI_STRINGS.HTTP_RESPONSE_TYPE_TEXT,
-        onDownloadProgress: (progressEvent: AxiosProgressEvent) => {
-          const xhr = progressEvent.event?.target as XMLHttpRequest | undefined;
-          const currentText = xhr
-            ? xhr.responseText
-            : (progressEvent as unknown as { responseText?: string }).responseText || UI_STRINGS.EMPTY_STRING;
-
-          if (!currentText || currentText.length <= lastProcessedIndex) {
-            return;
-          }
-
-          const newChunk = currentText.slice(lastProcessedIndex);
-          lastProcessedIndex = currentText.length;
-
-          // Process SSE lines
-          const lines = newChunk.split(UI_STRINGS.NEWLINE_SEPARATOR);
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith(UI_STRINGS.SSE_DATA_PREFIX)) {
-              const jsonStr = trimmed.slice(UI_STRINGS.SSE_DATA_PREFIX.length);
-              try {
-                const event = JSON.parse(jsonStr);
-
-                if (event.type === UI_STRINGS.SSE_EVENT_THINKING_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
-                  callbacks.onThinkingDelta?.(event.text);
-                } else if (event.type === UI_STRINGS.SSE_EVENT_TEXT_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
-                  callbacks.onTextDelta(event.text);
-                } else if (event.type === UI_STRINGS.SSE_EVENT_DIAGNOSTIC_DATA && event.diagnosticData) {
-                  callbacks.onDiagnosticData(event.diagnosticData, event.markdownReport || UI_STRINGS.EMPTY_STRING);
-                } else if (event.type === UI_STRINGS.SSE_EVENT_DONE) {
-                  callbacks.onComplete();
-                } else if (event.type === UI_STRINGS.SSE_EVENT_ERROR) {
-                  callbacks.onError(event.error || UI_STRINGS.API_STREAM_ERROR);
-                }
-              } catch {
-                // Incomplete JSON chunk across network boundaries; handled on subsequent chunks
-              }
-            }
-          }
-        },
-      });
-
-      callbacks.onComplete();
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          UI_STRINGS.API_ERROR_NETWORK;
-        callbacks.onError(errorMsg);
-      } else if (error instanceof Error) {
-        callbacks.onError(error.message);
-      } else {
-        callbacks.onError(UI_STRINGS.API_ERROR_NETWORK);
-      }
-    }
+    await this.streamSseRequest(UI_STRINGS.API_CHAT_ENDPOINT, payload, callbacks, signal);
   }
 
   /**
@@ -224,10 +277,9 @@ export class ChatService {
     content,
     targetLanguage,
     targetLanguageCode,
+    signal,
     callbacks,
   }: SendTranslationParams): Promise<void> {
-    let lastProcessedIndex = 0;
-
     const payload = {
       sessionId,
       userId,
@@ -236,65 +288,7 @@ export class ChatService {
       targetLanguageCode,
     };
 
-    try {
-      await axios.post(UI_STRINGS.API_TRANSLATE_ENDPOINT, payload, {
-        headers: {
-          [UI_STRINGS.HTTP_HEADER_CONTENT_TYPE]: UI_STRINGS.HTTP_MIME_JSON,
-        },
-        responseType: UI_STRINGS.HTTP_RESPONSE_TYPE_TEXT,
-        onDownloadProgress: (progressEvent: AxiosProgressEvent) => {
-          const xhr = progressEvent.event?.target as XMLHttpRequest | undefined;
-          const currentText = xhr
-            ? xhr.responseText
-            : (progressEvent as unknown as { responseText?: string }).responseText || UI_STRINGS.EMPTY_STRING;
-
-          if (!currentText || currentText.length <= lastProcessedIndex) {
-            return;
-          }
-
-          const newChunk = currentText.slice(lastProcessedIndex);
-          lastProcessedIndex = currentText.length;
-
-          const lines = newChunk.split(UI_STRINGS.NEWLINE_SEPARATOR);
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith(UI_STRINGS.SSE_DATA_PREFIX)) {
-              const jsonStr = trimmed.slice(UI_STRINGS.SSE_DATA_PREFIX.length);
-              try {
-                const event = JSON.parse(jsonStr);
-
-                if (event.type === UI_STRINGS.SSE_EVENT_TEXT_DELTA && typeof event.text === UI_STRINGS.TYPEOF_STRING) {
-                  callbacks.onTextDelta(event.text);
-                } else if (event.type === UI_STRINGS.SSE_EVENT_DIAGNOSTIC_DATA && event.diagnosticData) {
-                  callbacks.onDiagnosticData(event.diagnosticData, event.markdownReport || UI_STRINGS.EMPTY_STRING);
-                } else if (event.type === UI_STRINGS.SSE_EVENT_DONE) {
-                  callbacks.onComplete();
-                } else if (event.type === UI_STRINGS.SSE_EVENT_ERROR) {
-                  callbacks.onError(event.error || UI_STRINGS.API_STREAM_ERROR);
-                }
-              } catch {
-                // Incomplete JSON chunk across network boundaries
-              }
-            }
-          }
-        },
-      });
-
-      callbacks.onComplete();
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          UI_STRINGS.API_ERROR_NETWORK;
-        callbacks.onError(errorMsg);
-      } else if (error instanceof Error) {
-        callbacks.onError(error.message);
-      } else {
-        callbacks.onError(UI_STRINGS.API_ERROR_NETWORK);
-      }
-    }
+    await this.streamSseRequest(UI_STRINGS.API_TRANSLATE_ENDPOINT, payload, callbacks, signal);
   }
 }
 

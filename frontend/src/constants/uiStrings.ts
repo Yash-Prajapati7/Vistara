@@ -28,6 +28,8 @@ export const UI_STRINGS = {
   NEW_ANALYSIS: 'New Analysis',
   SEND: 'Analyze',
   SEND_MESSAGE: 'Send message',
+  STOP_GENERATION: 'Stop generating',
+  RESPONSE_STOPPED_NOTICE: 'Response generation stopped.',
   ATTACH_IMAGE: 'Upload crop or leaf photo',
   ATTACH_VIDEO: 'Upload crop or field video',
   ATTACH_MEDIA: 'Upload crop photo or field video',
@@ -160,6 +162,8 @@ export const UI_STRINGS = {
   QUERY_USER_ID: 'userId',
   API_ERROR_NETWORK: 'Unable to reach Vistara pathology backend service. Check connection.',
   API_STREAM_ERROR: 'Diagnostic stream encountered an interruption.',
+  ERR_NAME_ABORT: 'AbortError',
+  ERR_NAME_CANCELED: 'CanceledError',
 
   // Server-Sent Events (SSE) Protocol Constants
   SSE_EVENT_TEXT_DELTA: 'text-delta',

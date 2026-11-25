@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ArrowUp, Image as ImageIcon, Mic } from 'lucide-react';
+import { ArrowUp, Image as ImageIcon, Mic, Square } from 'lucide-react';
 import { ImageAttachment, VideoAttachment } from '../../types/chat';
 import { ImagePreview } from './ImagePreview';
 import { VideoPreview } from './VideoPreview';
@@ -8,9 +8,16 @@ import { UI_STRINGS } from '../../constants/uiStrings';
 interface ChatInputProps {
   onSendMessage: (text: string, image?: ImageAttachment, video?: VideoAttachment) => void;
   disabled?: boolean;
+  isStreaming?: boolean;
+  onStopStreaming?: () => void;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = false }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  disabled = false,
+  isStreaming = false,
+  onStopStreaming,
+}) => {
   const [text, setText] = useState('');
   const [stagedImage, setStagedImage] = useState<ImageAttachment | undefined>(undefined);
   const [stagedVideo, setStagedVideo] = useState<VideoAttachment | undefined>(undefined);
@@ -114,7 +121,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === UI_STRINGS.KEY_ENTER && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      if (!isStreaming) {
+        handleSubmit();
+      }
     }
   };
 
@@ -226,21 +235,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, disabled = 
               <Mic size={17} strokeWidth={1.8} />
             </button>
 
-            {/* Primary Send Button: Near-black Ink Pill in light mode, crisp white in dark mode */}
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              title={UI_STRINGS.SEND_MESSAGE}
-              aria-label={UI_STRINGS.SEND_MESSAGE}
-              className={`w-9 h-9 rounded-full border-0 flex items-center justify-center transition-all duration-150 ${
-                canSubmit
-                  ? 'bg-primary dark:bg-white text-on-primary dark:text-ink cursor-pointer hover:bg-primary-active dark:hover:bg-white/90 active:scale-95 shadow-subtle'
-                  : 'bg-hairline dark:bg-white/10 text-muted-soft dark:text-white/20 cursor-not-allowed'
-              }`}
-            >
-              <ArrowUp size={18} strokeWidth={2.4} />
-            </button>
+            {/* Primary Send / Stop Button */}
+            {isStreaming && onStopStreaming ? (
+              <button
+                type="button"
+                onClick={onStopStreaming}
+                title={UI_STRINGS.STOP_GENERATION}
+                aria-label={UI_STRINGS.STOP_GENERATION}
+                className="w-9 h-9 rounded-full border-0 flex items-center justify-center bg-primary dark:bg-white text-on-primary dark:text-ink cursor-pointer hover:bg-primary-active dark:hover:bg-white/90 active:scale-95 shadow-subtle transition-all duration-150"
+              >
+                <Square size={13} fill={UI_STRINGS.ICON_FILL_CURRENT} strokeWidth={2} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                title={UI_STRINGS.SEND_MESSAGE}
+                aria-label={UI_STRINGS.SEND_MESSAGE}
+                className={`w-9 h-9 rounded-full border-0 flex items-center justify-center transition-all duration-150 ${
+                  canSubmit
+                    ? 'bg-primary dark:bg-white text-on-primary dark:text-ink cursor-pointer hover:bg-primary-active dark:hover:bg-white/90 active:scale-95 shadow-subtle'
+                    : 'bg-hairline dark:bg-white/10 text-muted-soft dark:text-white/20 cursor-not-allowed'
+                }`}
+              >
+                <ArrowUp size={18} strokeWidth={2.4} />
+              </button>
+            )}
           </div>
         </div>
       </div>

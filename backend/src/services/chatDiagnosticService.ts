@@ -30,6 +30,76 @@ export interface StreamTranslationOptions {
 
 export class ChatDiagnosticService {
   /**
+   * Binds an AbortController to premature HTTP response closure so upstream LLM
+   * streams terminate promptly when the client cancels.
+   */
+  private createStreamAbortController(res: Response) {
+    const abortController = new AbortController();
+    const onResClose = () => {
+      if (!res.writableEnded) {
+        abortController.abort();
+      }
+    };
+    res.on(SERVER_STRINGS.EVENT_CLOSE, onResClose);
+
+    return {
+      abortController,
+      cleanup: () => res.off(SERVER_STRINGS.EVENT_CLOSE, onResClose),
+    };
+  }
+
+  /**
+   * Checks whether a streaming failure resulted from an intentional client abort.
+   */
+  private isAbortError(error: unknown, signal: AbortSignal): boolean {
+    return (
+      signal.aborted ||
+      (error instanceof Error && error.name === SERVER_STRINGS.ABORT_ERROR_NAME)
+    );
+  }
+
+  /**
+   * Persists any partial response/reasoning streamed prior to client cancellation
+   * and closes the SSE response cleanly.
+   */
+  private async handleAbortedStream(
+    res: Response,
+    sessionId: string,
+    fullResponseText: string,
+    fullThinkingText: string,
+    updateContext: boolean
+  ): Promise<void> {
+    logger.info(SERVER_STRINGS.LOG_STREAM_ABORTED, {
+      sessionId,
+      partialLength: fullResponseText.length,
+    });
+
+    if (fullResponseText || fullThinkingText) {
+      const { markdownReport, diagnosticData } = parseModelResponse(fullResponseText);
+      const completionToSave = markdownReport || fullResponseText;
+
+      if (updateContext && fullResponseText) {
+        contextService.updateModelResponse(sessionId, fullResponseText, diagnosticData);
+      }
+
+      try {
+        await chatHistoryService.recordCompletion(
+          sessionId,
+          completionToSave,
+          diagnosticData,
+          fullThinkingText
+        );
+      } catch (dbSaveError: unknown) {
+        logger.error('Failed to persist aborted partial completion to MongoDB', dbSaveError);
+      }
+    }
+
+    if (!res.writableEnded) {
+      res.end();
+    }
+  }
+
+  /**
    * Orchestrates the entire vision-language diagnostic streaming pipeline:
    * 1. Session resolution and MongoDB turn persistence
    * 2. SSE streaming headers initialization
@@ -71,6 +141,7 @@ export class ChatDiagnosticService {
 
     let fullResponseText = SERVER_STRINGS.EMPTY_STRING;
     let fullThinkingText = SERVER_STRINGS.EMPTY_STRING;
+    const { abortController, cleanup } = this.createStreamAbortController(res);
 
     try {
       // Execute vision-language streaming pipeline with context understanding
@@ -81,12 +152,17 @@ export class ChatDiagnosticService {
         image,
         video,
         modelId,
+        abortSignal: abortController.signal,
       });
 
       let isInsideThinkTag = false;
 
       // Stream full parts (reasoning deltas and text deltas) to client as they are generated
       for await (const part of streamResult.stream) {
+        if (abortController.signal.aborted || res.writableEnded) {
+          break;
+        }
+        
         if (part.type === SERVER_STRINGS.EVENT_REASONING_DELTA) {
           fullThinkingText += part.text;
           res.write(
@@ -157,6 +233,11 @@ export class ChatDiagnosticService {
         }
       }
 
+      if (abortController.signal.aborted) {
+        await this.handleAbortedStream(res, sessionId, fullResponseText, fullThinkingText, true);
+        return;
+      }
+
       // Parse complete response to extract Markdown report and structured DiagnosticData
       const { markdownReport, diagnosticData } = parseModelResponse(fullResponseText);
 
@@ -198,6 +279,11 @@ export class ChatDiagnosticService {
       res.end();
       logger.info('Completed diagnostic streaming for session', { sessionId });
     } catch (error: unknown) {
+      if (this.isAbortError(error, abortController.signal)) {
+        await this.handleAbortedStream(res, sessionId, fullResponseText, fullThinkingText, true);
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : SERVER_STRINGS.ERR_AI_GENERATION_FAILED;
       logger.error('Diagnostic streaming pipeline failed', error);
 
@@ -216,6 +302,8 @@ export class ChatDiagnosticService {
         })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
       );
       res.end();
+    } finally {
+      cleanup();
     }
   }
 
@@ -254,14 +342,19 @@ export class ChatDiagnosticService {
     }
 
     let fullResponseText = SERVER_STRINGS.EMPTY_STRING;
+    const { abortController, cleanup } = this.createStreamAbortController(res);
 
     try {
       const streamResult = await streamPathologyTranslation({
         content,
         targetLanguage,
+        abortSignal: abortController.signal,
       });
 
       for await (const part of streamResult.stream) {
+        if (abortController.signal.aborted || res.writableEnded) {
+          break;
+        }
         if (part.type === SERVER_STRINGS.EVENT_TEXT_DELTA) {
           fullResponseText += part.text;
           res.write(
@@ -271,6 +364,17 @@ export class ChatDiagnosticService {
             })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
           );
         }
+      }
+
+      if (abortController.signal.aborted) {
+        await this.handleAbortedStream(
+          res,
+          sessionId,
+          fullResponseText,
+          SERVER_STRINGS.EMPTY_STRING,
+          false
+        );
+        return;
       }
 
       // Parse translated response to extract structured DiagnosticData if present
@@ -309,6 +413,17 @@ export class ChatDiagnosticService {
       res.end();
       logger.info('Completed diagnostic translation streaming', { sessionId, targetLanguage });
     } catch (error: unknown) {
+      if (this.isAbortError(error, abortController.signal)) {
+        await this.handleAbortedStream(
+          res,
+          sessionId,
+          fullResponseText,
+          SERVER_STRINGS.EMPTY_STRING,
+          false
+        );
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : SERVER_STRINGS.ERR_AI_GENERATION_FAILED;
       logger.error('Translation streaming failed', error);
 
@@ -327,6 +442,8 @@ export class ChatDiagnosticService {
         })}${SERVER_STRINGS.SSE_DOUBLE_NEWLINE}`
       );
       res.end();
+    } finally {
+      cleanup();
     }
   }
 
