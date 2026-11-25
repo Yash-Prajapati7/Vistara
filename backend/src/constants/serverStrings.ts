@@ -89,6 +89,7 @@ export const SERVER_STRINGS = {
   // Type Identifiers
   TYPEOF_FUNCTION: 'function',
   TYPEOF_NUMBER: 'number',
+  TYPEOF_STRING: 'string',
 
   // Status & Success Messages
   STATUS_HEALTHY: 'healthy',

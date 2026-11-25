@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
-import { ALLOWED_MODEL_IDS } from '../constants/modelConfig.js';
+import { ALLOWED_MODEL_IDS, MODEL_CONFIG } from '../constants/modelConfig.js';
 
 const imageAttachmentSchema = z.object({
   id: z.string().optional(),
@@ -24,7 +24,10 @@ const videoAttachmentSchema = z.object({
 const chatRequestSchema = z.object({
   sessionId: z.string().optional(),
   userId: z.string().optional(),
-  prompt: z.string().min(1, SERVER_STRINGS.ERR_MISSING_PROMPT),
+  prompt: z
+    .string()
+    .min(1, SERVER_STRINGS.ERR_MISSING_PROMPT)
+    .transform((val) => val.slice(0, MODEL_CONFIG.MAX_PROMPT_LENGTH)),
   responseLanguage: z.string().optional(),
   image: imageAttachmentSchema,
   video: videoAttachmentSchema,

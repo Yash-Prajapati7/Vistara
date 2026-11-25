@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { SERVER_STRINGS } from '../constants/serverStrings.js';
+import { MODEL_CONFIG } from '../constants/modelConfig.js';
 import { DB_CONSTANTS } from '../constants/dbConstants.js';
 import { validateChatRequest, validateTranslationRequest } from '../middleware/requestValidator.js';
 import { chatDiagnosticService } from '../services/chatDiagnosticService.js';
@@ -72,9 +73,14 @@ chatRouter.post(
         return;
       }
 
+      const sanitizedPrompt =
+        typeof prompt === SERVER_STRINGS.TYPEOF_STRING
+          ? prompt.slice(0, MODEL_CONFIG.MAX_PROMPT_LENGTH)
+          : SERVER_STRINGS.EMPTY_STRING;
+
       const title = await chatHistoryService.generateAndPersistTitle({
         sessionId,
-        prompt: prompt || SERVER_STRINGS.EMPTY_STRING,
+        prompt: sanitizedPrompt,
         hasImage: Boolean(hasImage),
         hasVideo: Boolean(hasVideo),
         userId,

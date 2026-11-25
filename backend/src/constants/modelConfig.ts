@@ -22,7 +22,8 @@ export const MODEL_CONFIG = {
   TOP_P: 0.9,
   MAX_TOKENS: 15000,
 
-  // Context Settings
+  // Context & Input Safeguard Settings
+  MAX_PROMPT_LENGTH: 10000,
   MAX_PROMPT_HISTORY_ITEMS: 20,
   DEFAULT_SESSION_PREFIX: 'conv-',
 
